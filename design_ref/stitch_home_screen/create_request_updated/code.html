@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create Request - ReliefLink</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#777777",
+                        background: "#ffffff",
+                        surface: "#ffffff",
+                        "on-surface": "#1a1c1c",
+                        "surface-variant": "#f4f4f5",
+                        "on-surface-variant": "#71717a",
+                        outline: "#e4e4e7",
+                        secondary: "#000000"
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
+                        headline: ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "8px",
+                        "lg": "12px",
+                        "xl": "16px",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            min-height: 100dvh;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-zinc-900 antialiased min-h-screen pb-32">
+<!-- TopAppBar from COMPONENTS_9 -->
+<nav class="fixed top-0 w-full z-50 bg-white dark:bg-zinc-900 border-b-2 border-zinc-200 dark:border-zinc-800 flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-zinc-700 dark:text-zinc-300" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-inter font-bold tracking-tight text-zinc-700 dark:text-zinc-300 text-lg">New Request</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-zinc-700 dark:text-zinc-300" data-icon="emergency">emergency</span>
+<span class="text-2xl font-black text-zinc-900 dark:text-white">ReliefLink</span>
+</div>
+</nav>
+<main class="pt-24 px-6 max-w-2xl mx-auto">
+<!-- Header Signal -->
+<header class="mb-8">
+<span class="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Immediate Action Required</span>
+<h2 class="text-3xl font-black leading-tight tracking-tight text-zinc-900 mb-3">Signal for Help</h2>
+<p class="text-sm text-zinc-500 leading-relaxed">Provide essential details. Our coordination team will prioritize your request based on severity and resources.</p>
+</header>
+<!-- Rapid Form -->
+<form class="space-y-8">
+<!-- Type Selector -->
+<section class="space-y-4">
+<label class="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 ml-1">Type of Emergency</label>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex flex-col items-center justify-center p-6 rounded-lg border-2 border-zinc-100 hover:border-zinc-900 hover:bg-zinc-50 transition-all text-center group" type="button">
+<span class="material-symbols-outlined text-zinc-900 mb-2 text-3xl" data-icon="medical_services">medical_services</span>
+<span class="font-bold text-xs uppercase tracking-tight">Medical</span>
+</button>
+<button class="flex flex-col items-center justify-center p-6 rounded-lg bg-zinc-900 text-white border-2 border-zinc-900 shadow-md text-center" type="button">
+<span class="material-symbols-outlined mb-2 text-3xl" data-icon="restaurant" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+<span class="font-bold text-xs uppercase tracking-tight">Food</span>
+</button>
+<button class="flex flex-col items-center justify-center p-6 rounded-lg border-2 border-zinc-100 hover:border-zinc-900 hover:bg-zinc-50 transition-all text-center" type="button">
+<span class="material-symbols-outlined text-zinc-900 mb-2 text-3xl" data-icon="emergency_home">emergency_home</span>
+<span class="font-bold text-xs uppercase tracking-tight">Shelter</span>
+</button>
+<button class="flex flex-col items-center justify-center p-6 rounded-lg border-2 border-zinc-100 hover:border-zinc-900 hover:bg-zinc-50 transition-all text-center" type="button">
+<span class="material-symbols-outlined text-zinc-900 mb-2 text-3xl" data-icon="bubble">life_buoy</span>
+<span class="font-bold text-xs uppercase tracking-tight">Rescue</span>
+</button>
+</div>
+</section>
+<!-- Description -->
+<section class="space-y-3">
+<label class="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 ml-1">Situation Details</label>
+<div class="relative">
+<textarea class="w-full bg-zinc-50 border-2 border-zinc-100 rounded-lg p-5 text-zinc-900 placeholder:text-zinc-400 focus:ring-0 focus:border-zinc-900 transition-all resize-none text-sm" placeholder="Briefly describe the situation (e.g., Rising water levels, 2 elderly people, need dry food...)" rows="4"></textarea>
+</div>
+</section>
+<!-- People Count & Location Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- People Count -->
+<section class="space-y-3">
+<label class="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 ml-1">Number of People</label>
+<div class="flex items-center bg-zinc-50 rounded-lg p-1 border-2 border-zinc-100">
+<button class="w-12 h-12 flex items-center justify-center bg-white rounded shadow-sm hover:bg-zinc-100 active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-zinc-900" data-icon="remove">remove</span>
+</button>
+<input class="flex-1 bg-transparent border-none text-center font-black text-xl focus:ring-0 text-zinc-900" type="number" value="1"/>
+<button class="w-12 h-12 flex items-center justify-center bg-white rounded shadow-sm hover:bg-zinc-100 active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-zinc-900" data-icon="add">add</span>
+</button>
+</div>
+</section>
+<!-- Location -->
+<section class="space-y-3">
+<label class="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 ml-1">Current Location</label>
+<div class="relative group cursor-pointer overflow-hidden rounded-lg h-[58px] bg-zinc-50 flex items-center px-4 gap-3 border-2 border-zinc-100 hover:border-zinc-900 transition-all">
+<div class="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[1.1rem]" data-icon="my_location" style="font-variation-settings: 'FILL' 1;">my_location</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-black text-zinc-900">Auto-detecting...</span>
+<span class="text-[9px] text-zinc-400 uppercase tracking-widest font-bold">GPS Precise (4m)</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Visual Context -->
+<section class="mt-4">
+<div class="w-full h-44 bg-zinc-100 rounded-lg relative overflow-hidden border-2 border-zinc-100">
+<img class="w-full h-full object-cover grayscale opacity-60" data-alt="abstract top-down map view" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHm_irZ4glTZvzrqNSIFgCPNCZp9XHs09rSx_5FQ8j6LxHLIu56cPlcsAuAT1rOQJ3FKNZ1BghTHm3wt5JcfmXaUmTY2W1NLTsdcLXqttQq0XedCfnl9PeuPzhv35s-8x0aXHoF3kIGSgg3wdKwE8Lzhm4KmhgIR72coruWsg9VEostljJreLjSjn0jtrBtG1tkZSRHc8KsS9RfmEKMCjkIn6hjKmVZY2eZO6ABKVlpW0ky8_QqJofRdPnD3dZzfLn6Ku19iOj"/>
+<div class="absolute inset-0 bg-gradient-to-t from-white/40 to-transparent"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+<div class="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-white shadow-xl ring-4 ring-white">
+<span class="material-symbols-outlined text-xl" data-icon="location_on" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+</div>
+<div class="mt-3 flex justify-between items-center px-1">
+<span class="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Ref: 40.7128° N, 74.0060° W</span>
+<button class="text-[9px] font-black text-zinc-900 uppercase tracking-widest hover:underline" type="button">Manual Edit</button>
+</div>
+</section>
+</form>
+</main>
+<!-- BottomNavBar from COMPONENTS_9 Style adapted for Action Bar -->
+<div class="fixed bottom-0 left-0 w-full p-6 bg-white border-t-2 border-zinc-200 z-[60]">
+<div class="max-w-2xl mx-auto flex flex-col gap-4">
+<div class="flex items-start gap-3 px-1">
+<span class="material-symbols-outlined text-zinc-400 text-sm" data-icon="verified_user">verified_user</span>
+<p class="text-[10px] font-bold text-zinc-500 leading-tight uppercase tracking-tight">Encrypted data shared with verified disaster response teams only.</p>
+</div>
+<button class="w-full h-[56px] bg-zinc-900 text-white rounded-lg font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg hover:bg-zinc-800 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="send">send</span>
+                Submit Request
+            </button>
+</div>
+</div>
+<!-- Bottom Navigation Component Integration -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-white dark:bg-zinc-900 border-t-2 border-zinc-200 dark:border-zinc-800 shadow-lg hidden">
+<!-- Using hidden as this screen has a prominent Submit action that overrides standard nav bar -->
+</nav>
+</body></html>

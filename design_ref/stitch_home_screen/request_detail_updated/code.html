@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Request Details - ReliefLink</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#777777",
+              "background": "#ffffff",
+              "on-background": "#18181b",
+              "surface": "#ffffff",
+              "on-surface": "#18181b",
+              "surface-variant": "#f4f4f5",
+              "on-surface-variant": "#71717a",
+              "outline": "#e4e4e7",
+              "error": "#ef4444",
+              "secondary": "#18181b",
+              "on-secondary": "#ffffff"
+            },
+            fontFamily: {
+              "sans": ["Inter", "ui-sans-serif", "system-ui"],
+              "body": ["Inter"],
+              "headline": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {
+              "DEFAULT": "8px",
+              "lg": "12px",
+              "xl": "16px",
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        min-height: 100dvh;
+      }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-zinc-200">
+<!-- TopAppBar (from COMPONENTS_9) -->
+<header class="fixed top-0 w-full z-50 bg-white dark:bg-zinc-900 border-b-2 border-zinc-200 dark:border-zinc-800 flex justify-between items-center px-6 h-16 w-full max-w-none">
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-transform active:scale-95 duration-200">
+<span class="material-symbols-outlined text-zinc-700 dark:text-zinc-300" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-inter font-bold tracking-tight text-zinc-900 dark:text-white text-lg">Request #12345</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-inter font-bold uppercase tracking-widest text-zinc-500">Live Signal</span>
+<div class="w-2 h-2 rounded-full bg-error animate-pulse"></div>
+</div>
+</header>
+<main class="pt-24 pb-40 px-6 max-w-3xl mx-auto">
+<!-- Hero Section: Priority & Title -->
+<section class="mb-8">
+<div class="inline-flex items-center px-4 py-1.5 rounded-full bg-zinc-900 text-white mb-6 shadow-lg">
+<span class="material-symbols-outlined text-[18px] mr-2" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Critical Priority</span>
+</div>
+<h2 class="text-4xl md:text-5xl font-black tracking-tighter text-zinc-900 mb-3 leading-[1.1]">Emergency Medical &amp; Water Supply</h2>
+<div class="flex items-center gap-3 text-zinc-500">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-sm font-medium">Signal received 12 minutes ago</span>
+</div>
+</section>
+<!-- Content Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Requester Information Card -->
+<div class="col-span-1 p-6 rounded-lg bg-zinc-50 border border-zinc-200">
+<h3 class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Requester Identity</h3>
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full bg-zinc-200 overflow-hidden">
+<img alt="Requester Portrait" class="w-full h-full object-cover" data-alt="Close-up portrait of a middle-aged man with a concerned but resilient expression in a natural outdoor setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBL6udszj19XjDIPczP8d04IbcueNgDmohlJwl4qFiXoJvaMiDO2-yER1436h7EuTgKNy_DxeVNHxbqNln1SS3nPR7p3aVxd42uIHaj1RSEHMTsFg677xNscGUKRA0rNnctQDuBkPmc8H1O0yWFjBD2Np13gLmBRxkTmoi8l060tUgTAupxg9NXAUHy4wnFUm0Dsm9TJZH172PDohZZHIwLs_Ua3hI-LWz_RjJE18uHlVSkiQupl30rfCb5OMDPaD7FmHtWOyHi"/>
+</div>
+<div>
+<p class="font-bold text-lg text-zinc-900">Marcus Thorne</p>
+<p class="text-sm text-zinc-500">+1 (555) 092-8831</p>
+</div>
+</div>
+</div>
+<!-- Meta Data Card -->
+<div class="col-span-1 p-6 rounded-lg bg-zinc-50 border border-zinc-200">
+<h3 class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Request Specs</h3>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-sm text-zinc-500">Category</span>
+<span class="text-sm font-bold text-zinc-900">Medical / Logistics</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-sm text-zinc-500">Group Size</span>
+<span class="text-sm font-bold text-zinc-900">4 People</span>
+</div>
+</div>
+</div>
+<!-- Description Card -->
+<div class="col-span-1 md:col-span-2 p-8 rounded-lg bg-white border-2 border-zinc-100">
+<h3 class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-6">Detailed Description</h3>
+<p class="text-xl font-semibold leading-snug text-zinc-900">
+                "Structural collapse in residential sector. We have two individuals with minor lacerations and one suspected leg fracture. Clean water reserves are depleted. Power lines are down in the immediate vicinity. Need immediate stabilization and evacuation coordination."
+            </p>
+</div>
+<!-- Location Map Section -->
+<div class="col-span-1 md:col-span-2 rounded-lg overflow-hidden border-2 border-zinc-100 group">
+<div class="relative h-64 w-full">
+<img alt="Location Map" class="w-full h-full object-cover grayscale contrast-125" data-alt="High-detail satellite view of an urban residential grid with emergency markers and highlighted route paths" data-location="Port-au-Prince" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDotV8B2_w5h1AnhOi02pczvcOt5aLzaJa5GoH36DbAPWoHZTpX41xgSKEG2XhfqSJkkwl8b4IU86qETUUcXsTO1I3mhE0ZF2YadczEJovuItqn6UdZq3GO1EQW_ju55wS5uYi-egPwg22ACZY6ML8O_8GIJGsSYjv2vJsAEvdniLMGIGypEjQ92K4fGJ02Y9oOhvw1f5WWuqkOawLySjZBdiDhvSTqzZWhRYa6zPS4qH896pPm-qpvAu3_ZIfzXyISQ2ax2Mjt"/>
+<div class="absolute inset-0 bg-zinc-900/10"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+<div class="bg-zinc-900 text-white p-2 rounded-full shadow-2xl scale-125">
+<span class="material-symbols-outlined block" data-icon="location_on" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div class="mt-2 bg-zinc-900 text-white px-3 py-1 rounded-lg shadow-lg">
+<p class="text-[10px] font-black uppercase tracking-widest">Target</p>
+</div>
+</div>
+</div>
+<div class="p-6 bg-zinc-50 border-t border-zinc-200">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-bold text-lg text-zinc-900">Sector 7-B, West Ravine</h4>
+<p class="text-sm text-zinc-500">12.4592° N, 75.2341° W • 2.4km away</p>
+</div>
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="directions">directions</span>
+                        NAVIGATE
+                    </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Bar (Integrated Style) -->
+<footer class="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl z-50 px-6 pb-8 pt-4 border-t-2 border-zinc-200 shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+<div class="max-w-3xl mx-auto grid grid-cols-2 gap-4">
+<!-- Contact Action -->
+<button class="flex flex-col items-center justify-center gap-1 h-16 rounded-lg bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Contact</span>
+</button>
+<!-- Primary Accept Action -->
+<button class="flex items-center justify-center gap-3 h-16 rounded-lg bg-zinc-900 text-white shadow-xl hover:shadow-2xl active:scale-95 transition-all duration-100">
+<span class="material-symbols-outlined" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm font-black uppercase tracking-widest">Accept Request</span>
+</button>
+</div>
+</footer>
+<!-- BottomNavBar (from COMPONENTS_9) - Context/Optional for navigation -->
+<div class="hidden lg:block">
+<!-- This space reserved for consistency if the app has a global bottom nav -->
+</div>
+<!-- Floating Action Button for Emergency -->
+<div class="fixed bottom-32 right-6 z-40">
+<button class="w-14 h-14 rounded-full bg-error text-white shadow-2xl flex items-center justify-center active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined" data-icon="sos" style="font-variation-settings: 'FILL' 1;">sos</span>
+</button>
+</div>
+</body></html>

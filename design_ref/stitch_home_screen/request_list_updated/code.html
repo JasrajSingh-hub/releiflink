@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ReliefLink - Nearby Requests</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#777777",
+              "background": "#ffffff",
+              "on-surface": "#000000",
+              "surface-container": "#f4f4f5",
+              "surface-container-high": "#e4e4e7",
+              "outline": "#71717a",
+              "error": "#ef4444",
+              "warning": "#f59e0b",
+              "info": "#3b82f6"
+            },
+            fontFamily: {
+              "sans": ["Inter", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "headline": ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "8px",
+              "lg": "8px",
+              "xl": "12px",
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-zinc-200">
+<!-- TopAppBar from COMPONENTS_9 -->
+<header class="fixed top-0 w-full z-50 bg-white dark:bg-zinc-900 border-b-2 border-zinc-200 dark:border-zinc-800 flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-zinc-700 dark:text-zinc-300 active:scale-95 transition-transform" data-icon="emergency">emergency</span>
+<h1 class="text-2xl font-black text-zinc-900 dark:text-white font-inter tracking-tight">ReliefLink</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-zinc-700 dark:text-zinc-300" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Content Canvas -->
+<main class="pt-20 pb-36 px-6 max-w-2xl mx-auto space-y-8">
+<!-- Search and Filter Chips -->
+<section class="space-y-6">
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-zinc-400" data-icon="search">search</span>
+</div>
+<input class="w-full h-12 pl-12 pr-4 bg-zinc-100 border-none rounded-lg text-on-surface placeholder:text-zinc-500 focus:ring-2 focus:ring-zinc-900/10 transition-all" placeholder="Search by location or need..." type="text"/>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+<button class="whitespace-nowrap px-4 py-2 bg-zinc-900 text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-sm active:scale-95 transition-transform">
+                All Active
+            </button>
+<button class="whitespace-nowrap px-4 py-2 bg-zinc-100 text-zinc-600 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 active:scale-95 transition-transform">
+                Medical (4)
+            </button>
+<button class="whitespace-nowrap px-4 py-2 bg-zinc-100 text-zinc-600 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 active:scale-95 transition-transform">
+                Supplies (12)
+            </button>
+<button class="whitespace-nowrap px-4 py-2 bg-zinc-100 text-zinc-600 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 active:scale-95 transition-transform">
+                Rescue (2)
+            </button>
+</div>
+</section>
+<!-- Request List Hierarchy -->
+<section class="space-y-6">
+<!-- CRITICAL PRIORITY -->
+<div class="space-y-4">
+<div class="flex items-center gap-4">
+<h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Critical Priority</h2>
+<div class="h-px flex-grow bg-zinc-100"></div>
+</div>
+<div class="relative flex flex-col bg-white border border-zinc-200 rounded-lg overflow-hidden active:scale-[0.98] transition-all">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-600"></div>
+<div class="p-5 pl-7">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-600 rounded-lg">
+<span class="material-symbols-outlined" data-icon="medical_services" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-zinc-900">Critical Medical Support</h3>
+<p class="text-xs font-medium text-zinc-500">2.4 km away • Sector 7-G</p>
+</div>
+</div>
+<span class="px-2 py-0.5 bg-red-100 text-red-700 text-[9px] font-black uppercase tracking-tighter rounded">Active</span>
+</div>
+<p class="text-sm text-zinc-600 mb-4 leading-relaxed">Elderly patient requires oxygen refill and wound care. Access road is partially flooded but passable by SUV.</p>
+<div class="flex items-center justify-between border-t border-zinc-50 pt-4">
+<div class="flex -space-x-2">
+<img alt="V1" class="w-7 h-7 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBh9_yRwdu1HUjW9dYc1md1-3a5SxK9zrcqn4UgIazFUjaxYdsqhon_yen3m4CVQ1VfXz0N1zDqZFAttfSHnfVu-Y2qSi5BiZN3LDhP_Bc-fY43G8L45PuVqfIH4d0QTt_wPU4N5sJkhFTGY9RNZw7gl6g_pUeKaLj1aSxQzBNfBqVRUJDFyu1hQusyWmB4cZAZVdWAT7SolPnYRsKAHCngsjTSbEnwAEtLSb-Vu4aICooYNBep8p_uX9IzqDWrPaYym_jQFy7Q"/>
+<img alt="V2" class="w-7 h-7 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClEV9Dli82oIoMSeXBU0zujsKS6cb1cdF29flaG4k-flRjFkavtv-3jmzqvFOQut8ZkltrnpcUmjZAcKYCH3h8_vUf34nvNqPvElMZ7WOh4lzLJkf08FNm8WHAOqGFgwWrPk0pQmCeiUtc6L2ECFuOHNgofWQRE0WEBrtk4Al-WOTmXMEwC4vQuYgsLVEYHDY_333YZ55_ycyQiWBXS8irxOGcL05ao9tEKvDOzbuqMSZ8TftTvJ6G02xRmjjr5V6HEz_w-yN2"/>
+<div class="w-7 h-7 rounded-full border-2 border-white bg-zinc-100 flex items-center justify-center text-[9px] font-bold text-zinc-500">+2</div>
+</div>
+<button class="text-zinc-900 font-bold text-xs uppercase tracking-widest flex items-center gap-1">
+                            Details <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- HIGH PRIORITY -->
+<div class="space-y-4 pt-4">
+<div class="flex items-center gap-4">
+<h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">High Priority</h2>
+<div class="h-px flex-grow bg-zinc-100"></div>
+</div>
+<div class="relative flex flex-col bg-white border border-zinc-200 rounded-lg overflow-hidden active:scale-[0.98] transition-all">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-500"></div>
+<div class="p-5 pl-7">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 flex items-center justify-center bg-orange-50 text-orange-600 rounded-lg">
+<span class="material-symbols-outlined" data-icon="water_drop" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-zinc-900">Water &amp; Rations Delivery</h3>
+<p class="text-xs font-medium text-zinc-500">0.8 km away • Central High School</p>
+</div>
+</div>
+<span class="px-2 py-0.5 bg-zinc-100 text-zinc-500 text-[9px] font-black uppercase tracking-tighter rounded">Open</span>
+</div>
+<p class="text-sm text-zinc-600 mb-4 leading-relaxed">Temporary shelter housing 45 people running low on potable water. Delivery requested within 4 hours.</p>
+<div class="flex items-center justify-end border-t border-zinc-50 pt-4">
+<button class="text-zinc-900 font-bold text-xs uppercase tracking-widest flex items-center gap-1">
+                            Details <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- MEDIUM PRIORITY -->
+<div class="space-y-4 pt-4">
+<div class="flex items-center gap-4">
+<h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Medium Priority</h2>
+<div class="h-px flex-grow bg-zinc-100"></div>
+</div>
+<div class="relative flex flex-col bg-white border border-zinc-200 rounded-lg overflow-hidden active:scale-[0.98] transition-all">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-yellow-400"></div>
+<div class="p-5 pl-7">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 flex items-center justify-center bg-yellow-50 text-yellow-600 rounded-lg">
+<span class="material-symbols-outlined" data-icon="electrical_services" style="font-variation-settings: 'FILL' 1;">electrical_services</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-zinc-900">Power Restoration Help</h3>
+<p class="text-xs font-medium text-zinc-500">4.1 km away • River Road District</p>
+</div>
+</div>
+<span class="px-2 py-0.5 bg-zinc-100 text-zinc-500 text-[9px] font-black uppercase tracking-tighter rounded">Open</span>
+</div>
+<p class="text-sm text-zinc-600 mb-4 leading-relaxed">Fallen branch on residential line. No immediate danger, but requires clearing for utility crew access.</p>
+<div class="flex items-center justify-end border-t border-zinc-50 pt-4">
+<button class="text-zinc-900 font-bold text-xs uppercase tracking-widest flex items-center gap-1">
+                            Details <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<div class="fixed bottom-24 right-6 z-[60]">
+<button class="flex items-center gap-2 bg-zinc-900 text-white px-5 py-3.5 rounded-full font-bold shadow-xl active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="add" style="font-variation-settings: 'wght' 700;">add</span>
+<span class="uppercase tracking-widest text-xs">New Report</span>
+</button>
+</div>
+<!-- BottomNavBar from COMPONENTS_9 -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-white dark:bg-zinc-900 border-t-2 border-zinc-200 dark:border-zinc-800 flex justify-around items-center px-4 pb-4 pt-2 shadow-lg">
+<a class="flex flex-col items-center justify-center text-zinc-600 dark:text-zinc-400 p-2 hover:text-zinc-900 dark:hover:text-white active:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-inter text-xs font-bold uppercase">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg px-4 py-2 active:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="format_list_bulleted">format_list_bulleted</span>
+<span class="font-inter text-xs font-bold uppercase">Requests</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-600 dark:text-zinc-400 p-2 hover:text-zinc-900 dark:hover:text-white active:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="add_circle">add_circle</span>
+<span class="font-inter text-xs font-bold uppercase">Create</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-600 dark:text-zinc-400 p-2 hover:text-zinc-900 dark:hover:text-white active:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="map">map</span>
+<span class="font-inter text-xs font-bold uppercase">Map</span>
+</a>
+</nav>
+</body></html>
