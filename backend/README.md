@@ -1,43 +1,77 @@
 # ReliefLink Backend (Local Dev)
 
-This is a tiny Node.js backend to support Phase 3 syncing (upload outbox + fetch requests).
+Node.js + Express + PostgreSQL backend for Phase 3 syncing + minimal JWT login.
 
-## Run (file storage)
+## Requirements
 
-- In `releiflink/backend` run: `node server.js`
-- It listens on port `8080` by default.
-- By default it stores data in a local JSON file (good for quick testing).
+- Node.js
+- PostgreSQL (Docker recommended)
 
-## Run (PostgreSQL)
+## Run PostgreSQL (Docker)
 
-Option A (Docker, recommended):
+- In `releiflink/backend` run: `docker compose up -d`
 
-1) In `releiflink/backend` run: `docker compose up -d`
-2) In the same folder, run the backend with `DATABASE_URL`:
+## Configure env vars
 
-   - PowerShell:
-     `setx DATABASE_URL "postgres://relieflink:relieflink@localhost:5432/relieflink"`
-     (close and reopen the terminal)
+Set these in your terminal/session before starting the backend:
 
-   - Then run:
-     `node server.js`
+- `DATABASE_URL`
+  - Example: `postgres://relieflink:relieflink@localhost:5432/relieflink`
+- `JWT_SECRET`
+  - Example: `change_me_dev_secret`
+- `PORT` (optional)
+  - Default: `8080`
 
-Option B (Local Postgres install):
+PowerShell example:
 
-- Set `DATABASE_URL` to your Postgres connection string and run `node server.js`.
+- `setx DATABASE_URL "postgres://relieflink:relieflink@localhost:5432/relieflink"`
+- `setx JWT_SECRET "change_me_dev_secret"`
+- Close and reopen the terminal.
 
-Notes:
-- When `DATABASE_URL` is set, the backend automatically creates the `requests` table.
-- Check which storage is active at `GET /api/health` (it returns `{ storage: "postgres" }` or `{ storage: "file" }`).
+## Install deps + run
 
-## Endpoints
+- In `releiflink/backend` run:
+  - `npm install`
+  - `npm start`
+
+## Seed a user (no registration endpoint)
+
+1) Generate a bcrypt hash:
+
+- `node scripts/hash-password.js mypassword`
+
+2) Insert a user row into Postgres (example):
+
+- `INSERT INTO users (id, email, password_hash, role) VALUES ('u1', 'user@example.com', '<PASTE_HASH>', 'user');`
+- `INSERT INTO users (id, email, password_hash, role) VALUES ('v1', 'vol@example.com', '<PASTE_HASH>', 'volunteer');`
+
+## Auth
+
+### `POST /auth/login`
+
+Body:
+
+- `{ "email": "user@example.com", "password": "mypassword" }`
+
+Response:
+
+- `{ "token": "...", "user": { "id": "...", "email": "...", "role": "user" } }`
+
+Use the token in API calls:
+
+- `Authorization: Bearer <token>`
+
+## Requests API
 
 - `GET /api/health`
-- `GET /api/requests` -> returns an array of stored requests
-- `PUT /api/requests/:requestId` -> create/update full request JSON
-- `PATCH /api/requests/:requestId/status` with `{ "status": "inProgress" }`
+- `GET /api/requests` (no auth)
+
+Role-protected:
+
+- `PUT /api/requests/:requestId` (requires role `user`)
+- `PATCH /api/requests/:requestId/status` (requires role `volunteer`)
 
 ## Data storage
 
-- File mode: `releiflink/backend/data/requests.json`
-- Postgres mode: `requests` table (schema in `releiflink/backend/db/schema.sql`)
+- Postgres tables are created automatically on startup.
+- Docker init schema: `releiflink/backend/db/schema.sql`
