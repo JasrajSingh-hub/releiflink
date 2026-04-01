@@ -3,6 +3,15 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  canUsePostgres,
+  createPool,
+  ensureSchema,
+  listRequests,
+  upsertRequest,
+  updateStatus,
+} from "./db/postgres.js";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, "data");
 const DATA_FILE = join(DATA_DIR, "requests.json");
@@ -30,6 +39,8 @@ function saveStore(store) {
 }
 
 let store = loadStore(); // { [requestId]: requestJson }
+let pgPool = null;
+let storageMode = "file"; // 'file' | 'postgres'
 
 function json(res, status, body) {
   const payload = JSON.stringify(body);
@@ -102,11 +113,16 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && pathname === "/api/health") {
-    json(res, 200, { ok: true });
+    json(res, 200, { ok: true, storage: storageMode });
     return;
   }
 
   if (req.method === "GET" && pathname === "/api/requests") {
+    if (pgPool) {
+      const all = await listRequests(pgPool);
+      json(res, 200, all);
+      return;
+    }
     json(res, 200, Object.values(store));
     return;
   }
@@ -123,6 +139,12 @@ const server = http.createServer(async (req, res) => {
       return badRequest(res, "Invalid JSON body");
     }
     if (!isObject(body)) return badRequest(res, "Body must be a JSON object");
+
+    if (pgPool) {
+      const saved = await upsertRequest(pgPool, requestId, body);
+      json(res, 200, saved);
+      return;
+    }
 
     const existing = store[requestId];
     const createdAt = existing?.createdAt ?? body.createdAt ?? nowIso();
@@ -152,6 +174,13 @@ const server = http.createServer(async (req, res) => {
       return badRequest(res, "Missing `status`");
     }
 
+    if (pgPool) {
+      const updated = await updateStatus(pgPool, requestId, status);
+      if (!updated) return json(res, 404, { error: "Request not found" });
+      json(res, 200, updated);
+      return;
+    }
+
     const existing = store[requestId];
     if (!existing) return json(res, 404, { error: "Request not found" });
     const updated = { ...existing, status, updatedAt: nowIso() };
@@ -165,9 +194,27 @@ const server = http.createServer(async (req, res) => {
 });
 
 const PORT = Number.parseInt(process.env.PORT ?? "8080", 10);
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`ReliefLink backend listening on http://localhost:${PORT}`);
-  console.log(`Health:  http://localhost:${PORT}/api/health`);
-  console.log(`API base: http://localhost:${PORT}/api`);
-});
 
+async function start() {
+  if (canUsePostgres()) {
+    try {
+      pgPool = createPool();
+      await ensureSchema(pgPool);
+      storageMode = "postgres";
+      console.log("Storage: PostgreSQL (DATABASE_URL detected)");
+    } catch (e) {
+      pgPool = null;
+      storageMode = "file";
+      console.warn("Postgres init failed; falling back to file storage.");
+      console.warn(String(e));
+    }
+  }
+
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`ReliefLink backend listening on http://localhost:${PORT}`);
+    console.log(`Health:  http://localhost:${PORT}/api/health`);
+    console.log(`API base: http://localhost:${PORT}/api`);
+  });
+}
+
+start();
