@@ -6,6 +6,29 @@ A disaster-response coordination Flutter app (work-in-progress).
 
 - Feature breakdown: `docs/feature-breakdown.md`
 
+## Offline-First (Phase 3)
+
+- Requests are persisted locally (Hive) so they survive app restarts.
+- Changes are also written to a local outbox (sync queue).
+- Remote sync is optional and disabled by default; configure it in `lib/config/app_config.dart`.
+
+## Local Backend (Node.js) for Sync
+
+If you have Node.js, you can run a tiny local backend included in this repo.
+
+1) Start the backend:
+
+- In `releiflink/backend` run: `node server.js`
+
+2) Point the app to the backend:
+
+- Edit `releiflink/my_app/lib/config/app_config.dart` and set `remoteBaseUrl`.
+  - Android emulator: `http://10.0.2.2:8080/api`
+  - iOS simulator: `http://localhost:8080/api`
+  - Real phone (same Wi-Fi): `http://<YOUR_LAPTOP_LAN_IP>:8080/api`
+
+3) In the app, tap the `Sync` icon in the top bar.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

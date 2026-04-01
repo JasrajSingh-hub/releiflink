@@ -4,11 +4,13 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
     required this.requestCount,
+    required this.pendingSyncCount,
     required this.onRequestHelp,
     required this.onVolunteer,
   });
 
   final int requestCount;
+  final int pendingSyncCount;
   final VoidCallback onRequestHelp;
   final VoidCallback onVolunteer;
 
@@ -82,7 +84,7 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _SystemNote(requestCount: requestCount),
+          _SystemNote(requestCount: requestCount, pendingSyncCount: pendingSyncCount),
         ],
       ),
     );
@@ -288,9 +290,10 @@ class _MiniInfoCard extends StatelessWidget {
 }
 
 class _SystemNote extends StatelessWidget {
-  const _SystemNote({required this.requestCount});
+  const _SystemNote({required this.requestCount, required this.pendingSyncCount});
 
   final int requestCount;
+  final int pendingSyncCount;
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +309,7 @@ class _SystemNote extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Offline-first MVP. Requests stored locally. Active requests: $requestCount',
+              'Offline-first MVP. Local requests: $requestCount. Pending sync: $pendingSyncCount',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF52525B),
                     fontWeight: FontWeight.w600,

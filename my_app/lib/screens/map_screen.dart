@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -88,108 +86,114 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final all = _service.getAll();
-    final filtered = _applyFilter(all);
+    return AnimatedBuilder(
+      animation: _service,
+      builder: (context, _) {
+        final all = _service.getAll();
+        final filtered = _applyFilter(all);
+        final selected =
+            _selected == null ? null : _service.getById(_selected!.id);
 
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: Column(
-            children: [
-              _SearchRow(
-                onFilterTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Advanced filters are not part of this MVP',
-                      ),
+        return Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                children: [
+                  _SearchRow(
+                    onFilterTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Advanced filters are not part of this MVP',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _FilterChips(
+                    value: _filter,
+                    onChanged: (v) => setState(() => _filter = v),
+                  ),
+                  const SizedBox(height: 12),
+                  _GpsStatus(
+                    location: _userLocation,
+                    errorText: _gpsError,
+                    errorCode: _gpsErrorCode,
+                    onRetry: _startGps,
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ReliefMap(
+                      requests: filtered,
+                      height: null,
+                      focusRequestId: selected?.id,
+                      onSelectRequest: (r) => setState(() => _selected = r),
+                      showHint: false,
+                      userLocation: _userLocation,
+                      followUserLocation: selected == null,
+                      controller: _mapController,
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
-              const SizedBox(height: 10),
-              _FilterChips(
-                value: _filter,
-                onChanged: (v) => setState(() => _filter = v),
-              ),
-              const SizedBox(height: 12),
-              _GpsStatus(
-                location: _userLocation,
-                errorText: _gpsError,
-                errorCode: _gpsErrorCode,
-                onRetry: _startGps,
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: ReliefMap(
-                  requests: filtered,
-                  height: null,
-                  focusRequestId: _selected?.id,
-                  onSelectRequest: (r) => setState(() => _selected = r),
-                  showHint: false,
-                  userLocation: _userLocation,
-                  followUserLocation: _selected == null,
-                  controller: _mapController,
+            ),
+            if (selected != null)
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 90,
+                child: _SelectedCard(
+                  request: selected,
+                  onClear: () => setState(() => _selected = null),
+                  onView: () async {
+                    final r = selected;
+                    final result = await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RequestDetailScreen(requestId: r.id),
+                      ),
+                    );
+                    if (!mounted) return;
+                    if (result == true) setState(() {});
+                  },
                 ),
               ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        ),
-        if (_selected != null)
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 90,
-            child: _SelectedCard(
-              request: _selected!,
-              onClear: () => setState(() => _selected = null),
-              onView: () async {
-                final r = _selected;
-                if (r == null) return;
-                final result = await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => RequestDetailScreen(requestId: r.id),
+            Positioned(
+              right: 20,
+              bottom: 90,
+              child: Column(
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'loc',
+                    mini: true,
+                    onPressed: () {
+                      final loc = _userLocation;
+                      if (loc == null) {
+                        _startGps();
+                        return;
+                      }
+                      try {
+                        _mapController.move(loc, _mapController.camera.zoom);
+                      } catch (_) {
+                        _mapController.move(loc, 15);
+                      }
+                    },
+                    child: const Icon(Icons.my_location),
                   ),
-                );
-                if (!mounted) return;
-                if (result == true) setState(() {});
-              },
+                  const SizedBox(height: 12),
+                  FloatingActionButton(
+                    heroTag: 'new',
+                    onPressed: widget.onNewReport,
+                    child: const Icon(Icons.add),
+                  ),
+                ],
+              ),
             ),
-          ),
-        Positioned(
-          right: 20,
-          bottom: 90,
-          child: Column(
-            children: [
-              FloatingActionButton(
-                heroTag: 'loc',
-                mini: true,
-                onPressed: () {
-                  final loc = _userLocation;
-                  if (loc == null) {
-                    _startGps();
-                    return;
-                  }
-                  try {
-                    _mapController.move(loc, _mapController.camera.zoom);
-                  } catch (_) {
-                    _mapController.move(loc, 15);
-                  }
-                },
-                child: const Icon(Icons.my_location),
-              ),
-              const SizedBox(height: 12),
-              FloatingActionButton(
-                heroTag: 'new',
-                onPressed: widget.onNewReport,
-                child: const Icon(Icons.add),
-              ),
-            ],
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

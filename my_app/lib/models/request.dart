@@ -14,6 +14,7 @@ class ReliefRequest {
     required this.peopleCount,
     required this.locationText,
     required this.createdAt,
+    required this.updatedAt,
     required this.priority,
     this.status = RequestStatus.pending,
   });
@@ -24,6 +25,7 @@ class ReliefRequest {
   final int peopleCount;
   final String locationText;
   final DateTime createdAt;
+  final DateTime updatedAt;
   final RequestPriority priority;
   final RequestStatus status;
 
@@ -34,6 +36,7 @@ class ReliefRequest {
     String? locationText,
     RequestPriority? priority,
     RequestStatus? status,
+    DateTime? updatedAt,
   }) {
     return ReliefRequest(
       id: id,
@@ -42,10 +45,52 @@ class ReliefRequest {
       peopleCount: peopleCount ?? this.peopleCount,
       locationText: locationText ?? this.locationText,
       createdAt: createdAt,
+      updatedAt: updatedAt ?? DateTime.now(),
       priority: priority ?? this.priority,
       status: status ?? this.status,
     );
   }
+
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'type': type.name,
+      'description': description,
+      'peopleCount': peopleCount,
+      'locationText': locationText,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'priority': priority.name,
+      'status': status.name,
+    };
+  }
+
+  static ReliefRequest fromJson(Map<String, Object?> json) {
+    return ReliefRequest(
+      id: (json['id'] as String?) ?? 'unknown',
+      type: _parseEnum(RequestType.values, json['type'], RequestType.medical),
+      description: (json['description'] as String?) ?? '',
+      peopleCount: (json['peopleCount'] as int?) ?? 1,
+      locationText: (json['locationText'] as String?) ?? '',
+      createdAt: DateTime.tryParse((json['createdAt'] as String?) ?? '') ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse((json['updatedAt'] as String?) ?? '') ??
+          DateTime.tryParse((json['createdAt'] as String?) ?? '') ??
+          DateTime.now(),
+      priority:
+          _parseEnum(RequestPriority.values, json['priority'], RequestPriority.low),
+      status: _parseEnum(RequestStatus.values, json['status'], RequestStatus.pending),
+    );
+  }
+}
+
+T _parseEnum<T extends Enum>(List<T> values, Object? raw, T fallback) {
+  if (raw is String) {
+    for (final v in values) {
+      if (v.name == raw) return v;
+    }
+  }
+  return fallback;
 }
 
 RequestPriority computePriority({
@@ -122,4 +167,3 @@ Color priorityColor(ReliefRequest r) {
     RequestPriority.low => const Color(0xFF607D8B), // blue grey
   };
 }
-
