@@ -19,53 +19,63 @@ class _RequestListScreenState extends State<RequestListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final active = _service.getAll().where((r) => r.status != RequestStatus.completed).toList();
-    final filtered = _typeFilter == null ? active : active.where((r) => r.type == _typeFilter).toList();
-    final requests = _sorted(filtered);
+    return AnimatedBuilder(
+      animation: _service,
+      builder: (context, _) {
+        final active =
+            _service.getAll().where((r) => r.status != RequestStatus.completed).toList();
+        final filtered = _typeFilter == null
+            ? active
+            : active.where((r) => r.type == _typeFilter).toList();
+        final requests = _sorted(filtered);
 
-    return Stack(
-      children: [
-        RefreshIndicator(
-          onRefresh: () async => setState(() {}),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
-            children: [
-              TextField(
-                readOnly: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search by location or need...',
-                  prefixIcon: Icon(Icons.search),
-                ),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Search is not part of this MVP')),
-                  );
-                },
+        return Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () async {},
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+                children: [
+                  TextField(
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      hintText: 'Search by location or need...',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Search is not part of this MVP'),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _FilterRow(
+                    typeFilter: _typeFilter,
+                    counts: _counts(active),
+                    onSelectAll: () => setState(() => _typeFilter = null),
+                    onSelectType: (t) => setState(() => _typeFilter = t),
+                  ),
+                  const SizedBox(height: 14),
+                  if (requests.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 60),
+                      child: Center(child: Text('No requests yet')),
+                    )
+                  else
+                    ..._buildSections(context, requests),
+                ],
               ),
-              const SizedBox(height: 12),
-              _FilterRow(
-                typeFilter: _typeFilter,
-                counts: _counts(active),
-                onSelectAll: () => setState(() => _typeFilter = null),
-                onSelectType: (t) => setState(() => _typeFilter = t),
-              ),
-              const SizedBox(height: 14),
-              if (requests.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 60),
-                  child: Center(child: Text('No requests yet')),
-                )
-              else
-                ..._buildSections(context, requests),
-            ],
-          ),
-        ),
-        Positioned(
-          right: 20,
-          bottom: 90,
-          child: _NewReportFab(onTap: widget.onNewReport),
-        ),
-      ],
+            ),
+            Positioned(
+              right: 20,
+              bottom: 90,
+              child: _NewReportFab(onTap: widget.onNewReport),
+            ),
+          ],
+        );
+      },
     );
   }
 

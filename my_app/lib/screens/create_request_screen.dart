@@ -307,7 +307,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
 
     setState(() => _submitting = true);
     try {
-      _service.createRequest(
+      await _service.createRequest(
         type: _type,
         description: _descriptionController.text,
         peopleCount: _peopleCount,
@@ -335,6 +335,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   ReliefRequest? _previewRequest() {
     final locationText = _locationController.text.trim();
     if (locationText.isEmpty) return null;
+    final now = DateTime.now();
     return ReliefRequest(
       id: 'preview',
       type: _type,
@@ -343,7 +344,8 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           : _descriptionController.text.trim(),
       peopleCount: _peopleCount,
       locationText: locationText,
-      createdAt: DateTime.now(),
+      createdAt: now,
+      updatedAt: now,
       priority: computePriority(type: _type, peopleCount: _peopleCount),
     );
   }

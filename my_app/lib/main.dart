@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'screens/create_request_screen.dart';
 import 'screens/shell_screen.dart';
+import 'services/app_bootstrap.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  await AppBootstrap.init();
   runApp(const ReliefConnectApp());
 }
 

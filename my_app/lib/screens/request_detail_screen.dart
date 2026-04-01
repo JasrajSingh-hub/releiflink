@@ -145,9 +145,9 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
             const SnackBar(content: Text('Contact is not part of this MVP')),
           );
         },
-        onPrimary: () {
+        onPrimary: () async {
           if (canAccept) {
-            _service.acceptRequest(request.id);
+            await _service.acceptRequest(request.id);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Request accepted (In Progress)')),
             );
@@ -155,7 +155,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
             return;
           }
           if (canComplete) {
-            _service.markCompleted(request.id);
+            await _service.markCompleted(request.id);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Marked completed')),
             );
@@ -214,7 +214,7 @@ class _BottomActions extends StatelessWidget {
   final RequestStatus status;
   final Color accent;
   final VoidCallback onContact;
-  final VoidCallback onPrimary;
+  final Future<void> Function() onPrimary;
 
   @override
   Widget build(BuildContext context) {
@@ -248,7 +248,7 @@ class _BottomActions extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
-                onPressed: primaryEnabled ? onPrimary : null,
+                onPressed: primaryEnabled ? () async => onPrimary() : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryEnabled ? accent : const Color(0xFF16A34A),
                   foregroundColor: Colors.white,

@@ -1,44 +1,127 @@
 import 'dart:math';
 
-import '../models/request.dart';
+import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 
-class RequestService {
+import '../models/request.dart';
+import '../storage/local_store.dart';
+import 'outbox_service.dart';
+import '../models/outbox_item.dart';
+
+class RequestService extends ChangeNotifier {
   RequestService._();
 
   static final RequestService instance = RequestService._();
 
-  final List<ReliefRequest> _requests = [];
+  late final Box<Map> _requestsBox;
+  List<ReliefRequest> _cache = const [];
+  bool _ready = false;
 
-  List<ReliefRequest> getAll() => List.unmodifiable(_requests);
+  bool get ready => _ready;
+
+  Future<void> init() async {
+    _requestsBox = LocalStore.requestsBox();
+    _rebuildCache();
+    _requestsBox.watch().listen((_) {
+      _rebuildCache();
+      notifyListeners();
+    });
+    _ready = true;
+    notifyListeners();
+  }
+
+  List<ReliefRequest> getAll() => List.unmodifiable(_cache);
 
   ReliefRequest? getById(String id) {
-    for (final r in _requests) {
+    for (final r in _cache) {
       if (r.id == id) return r;
     }
     return null;
   }
 
-  ReliefRequest createRequest({
+  Future<ReliefRequest> createRequest({
     required RequestType type,
     required String description,
     required int peopleCount,
     required String locationText,
-  }) {
+  }) async {
     final priority = computePriority(type: type, peopleCount: peopleCount);
+    final now = DateTime.now();
     final request = ReliefRequest(
       id: _generateId(),
       type: type,
       description: description.trim(),
       peopleCount: peopleCount,
       locationText: locationText.trim(),
-      createdAt: DateTime.now(),
+      createdAt: now,
+      updatedAt: now,
       priority: priority,
     );
-    _requests.insert(0, request);
+    await _requestsBox.put(request.id, request.toJson());
+    await OutboxService.instance.enqueue(
+      action: OutboxAction.createRequest,
+      requestId: request.id,
+      payload: request.toJson(),
+    );
+    _rebuildCache();
+    notifyListeners();
     return request;
   }
 
-  ReliefRequest acceptRequest(String id) {
+  Future<ReliefRequest> updateRequest({
+    required String id,
+    RequestType? type,
+    String? description,
+    int? peopleCount,
+    String? locationText,
+  }) async {
+    final existing = getById(id);
+    if (existing == null) {
+      throw StateError('Request not found');
+    }
+
+    final nextType = type ?? existing.type;
+    final nextPeopleCount = peopleCount ?? existing.peopleCount;
+    final nextPriority =
+        computePriority(type: nextType, peopleCount: nextPeopleCount);
+
+    final updated = existing.copyWith(
+      type: type,
+      description: description?.trim(),
+      peopleCount: peopleCount,
+      locationText: locationText?.trim(),
+      priority: nextPriority,
+    );
+
+    await _requestsBox.put(updated.id, updated.toJson());
+    await OutboxService.instance.enqueue(
+      action: OutboxAction.updateRequest,
+      requestId: updated.id,
+      payload: updated.toJson(),
+    );
+
+    _rebuildCache();
+    notifyListeners();
+    return updated;
+  }
+
+  Future<void> applyRemoteRequests(List<Map<String, Object?>> remote) async {
+    var changed = false;
+    for (final json in remote) {
+      final incoming = ReliefRequest.fromJson(json);
+      final existing = getById(incoming.id);
+      if (existing == null || incoming.updatedAt.isAfter(existing.updatedAt)) {
+        await _requestsBox.put(incoming.id, incoming.toJson());
+        changed = true;
+      }
+    }
+    if (changed) {
+      _rebuildCache();
+      notifyListeners();
+    }
+  }
+
+  Future<ReliefRequest> acceptRequest(String id) async {
     final existing = getById(id);
     if (existing == null) {
       throw StateError('Request not found');
@@ -47,11 +130,18 @@ class RequestService {
       return existing;
     }
     final updated = existing.copyWith(status: RequestStatus.inProgress);
-    _replace(updated);
+    await _requestsBox.put(updated.id, updated.toJson());
+    await OutboxService.instance.enqueue(
+      action: OutboxAction.updateStatus,
+      requestId: updated.id,
+      payload: {'status': updated.status.name},
+    );
+    _rebuildCache();
+    notifyListeners();
     return updated;
   }
 
-  ReliefRequest markCompleted(String id) {
+  Future<ReliefRequest> markCompleted(String id) async {
     final existing = getById(id);
     if (existing == null) {
       throw StateError('Request not found');
@@ -60,14 +150,24 @@ class RequestService {
       return existing;
     }
     final updated = existing.copyWith(status: RequestStatus.completed);
-    _replace(updated);
+    await _requestsBox.put(updated.id, updated.toJson());
+    await OutboxService.instance.enqueue(
+      action: OutboxAction.updateStatus,
+      requestId: updated.id,
+      payload: {'status': updated.status.name},
+    );
+    _rebuildCache();
+    notifyListeners();
     return updated;
   }
 
-  void _replace(ReliefRequest updated) {
-    final index = _requests.indexWhere((r) => r.id == updated.id);
-    if (index == -1) return;
-    _requests[index] = updated;
+  void _rebuildCache() {
+    final list = <ReliefRequest>[];
+    for (final value in _requestsBox.values) {
+      list.add(ReliefRequest.fromJson(Map<String, Object?>.from(value)));
+    }
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    _cache = list;
   }
 
   static String _generateId() {
@@ -76,4 +176,3 @@ class RequestService {
     return 'req_${now}_$rand';
   }
 }
-
