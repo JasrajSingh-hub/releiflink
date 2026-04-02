@@ -29,6 +29,15 @@ If you have Node.js, you can run a tiny local backend included in this repo.
 
 3) In the app, tap the `Sync` icon in the top bar.
 
+## Login (JWT)
+
+- Tap the Profile icon (top-right) to open Profile.
+- Login uses `POST /auth/login` on the backend.
+- After login:
+  - Role `user` can create requests.
+  - Role `volunteer` can accept/complete requests.
+  - Sync uploads include `Authorization: Bearer <token>`.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
