@@ -3,6 +3,7 @@ import 'dart:io';
 
 import '../config/app_config.dart';
 import '../models/outbox_item.dart';
+import 'auth_service.dart';
 
 class RemoteSyncService {
   RemoteSyncService._();
@@ -29,6 +30,10 @@ class RemoteSyncService {
     client.connectionTimeout = _connectTimeout;
     try {
       final request = await client.getUrl(uri).timeout(_requestTimeout);
+      final token = AuthService.instance.token;
+      if (token != null && token.isNotEmpty) {
+        request.headers.set('Authorization', 'Bearer $token');
+      }
       final response = await request.close().timeout(_requestTimeout);
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       final body = await utf8.decoder.bind(response).join().timeout(_requestTimeout);
@@ -65,6 +70,10 @@ class RemoteSyncService {
     client.connectionTimeout = _connectTimeout;
     try {
       final request = await client.openUrl(method, uri).timeout(_requestTimeout);
+      final token = AuthService.instance.token;
+      if (token != null && token.isNotEmpty) {
+        request.headers.set('Authorization', 'Bearer $token');
+      }
       request.headers.contentType = ContentType.json;
       request.add(utf8.encode(jsonEncode(item.payload)));
       final response = await request.close().timeout(_requestTimeout);

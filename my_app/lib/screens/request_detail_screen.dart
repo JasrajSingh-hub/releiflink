@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/request.dart';
+import '../services/auth_service.dart';
 import '../services/request_service.dart';
 import '../widgets/relief_map.dart';
 
@@ -27,8 +28,10 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     }
 
     final accent = priorityColor(request);
-    final canAccept = request.status == RequestStatus.pending;
-    final canComplete = request.status == RequestStatus.inProgress;
+    final user = AuthService.instance.user;
+    final isVolunteer = user?.role == 'volunteer';
+    final canAccept = isVolunteer && request.status == RequestStatus.pending;
+    final canComplete = isVolunteer && request.status == RequestStatus.inProgress;
     final shortId = _shortId(request.id);
 
     return Scaffold(
@@ -139,6 +142,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       ),
       bottomNavigationBar: _BottomActions(
         status: request.status,
+        isVolunteer: isVolunteer,
         accent: accent,
         onContact: () {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -146,6 +150,14 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
           );
         },
         onPrimary: () async {
+          if (!isVolunteer) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Only volunteer role can accept/complete requests'),
+              ),
+            );
+            return;
+          }
           if (canAccept) {
             await _service.acceptRequest(request.id);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -206,12 +218,14 @@ class _InfoCard extends StatelessWidget {
 class _BottomActions extends StatelessWidget {
   const _BottomActions({
     required this.status,
+    required this.isVolunteer,
     required this.accent,
     required this.onContact,
     required this.onPrimary,
   });
 
   final RequestStatus status;
+  final bool isVolunteer;
   final Color accent;
   final VoidCallback onContact;
   final Future<void> Function() onPrimary;
@@ -223,7 +237,7 @@ class _BottomActions extends StatelessWidget {
       RequestStatus.inProgress => 'MARK COMPLETED',
       RequestStatus.completed => 'COMPLETED',
     };
-    final primaryEnabled = status != RequestStatus.completed;
+    final primaryEnabled = isVolunteer && status != RequestStatus.completed;
 
     return SafeArea(
       top: false,

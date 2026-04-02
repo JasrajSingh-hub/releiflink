@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/request.dart';
+import '../services/auth_service.dart';
 import '../services/location_service.dart';
 import '../services/request_service.dart';
 import '../widgets/relief_map.dart';
@@ -295,6 +296,20 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
+
+    final user = AuthService.instance.user;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login required (user)')),
+      );
+      return;
+    }
+    if (user.role != 'user') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only user role can create requests')),
+      );
+      return;
+    }
 
     if (_locationController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'screens/create_request_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/shell_screen.dart';
 import 'services/app_bootstrap.dart';
 import 'theme/app_theme.dart';
@@ -22,6 +24,8 @@ class ReliefConnectApp extends StatelessWidget {
       home: const ShellScreen(),
       routes: {
         CreateRequestScreen.routeName: (_) => const CreateRequestScreen(),
+        LoginScreen.routeName: (_) => const LoginScreen(),
+        ProfileScreen.routeName: (_) => const ProfileScreen(),
       },
     );
   }
