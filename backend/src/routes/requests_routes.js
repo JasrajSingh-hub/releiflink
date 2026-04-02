@@ -5,12 +5,18 @@ import { requireRole } from "../middleware/require_role.js";
 export function requestsRoutes({ controller, auth }) {
   const router = Router();
 
+  // Public: used by clients to see the most urgent requests first.
   router.get("/requests", controller.list);
 
   // Role-based rules:
   // - only "user" can create/update requests
   // - only "volunteer" can update/accept requests (status changes)
+  router.post("/requests", auth, requireRole("user"), controller.create);
+  router.patch("/requests/:id", auth, requireRole("user"), controller.patch);
+
+  // Compatibility endpoint used by the Flutter sync implementation.
   router.put("/requests/:requestId", auth, requireRole("user"), controller.put);
+
   router.patch(
     "/requests/:requestId/status",
     auth,
