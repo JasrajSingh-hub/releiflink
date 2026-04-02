@@ -229,6 +229,7 @@ class _SecondaryCard extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
+                    color: const Color(0xFF111827),
                   ),
             ),
             const SizedBox(height: 4),
@@ -281,7 +282,10 @@ class _MiniInfoCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF111827),
+            ),
           ),
         ],
       ),

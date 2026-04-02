@@ -8,7 +8,11 @@ import 'package:latlong2/latlong.dart';
 import '../models/request.dart';
 import '../services/location_service.dart';
 import '../services/request_service.dart';
+import '../services/routing_service.dart';
+import '../services/sync_service.dart';
+import '../utils/map_cluster.dart';
 import '../widgets/relief_map.dart';
+import '../widgets/zone_summary_sheet.dart';
 import 'request_detail_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -29,6 +33,8 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _userLocation;
   String? _gpsError;
   LocationErrorCode? _gpsErrorCode;
+  RouteResult? _routeResult;
+  bool _loadingRoute = false;
 
   @override
   void initState() {
@@ -82,6 +88,56 @@ class _MapScreenState extends State<MapScreen> {
       _gpsError = null;
       _gpsErrorCode = null;
     });
+    // Refresh route if we have an active in-progress request selected.
+    _maybeRefreshRoute();
+  }
+
+  Future<void> _maybeRefreshRoute() async {
+    final userLoc = _userLocation;
+    final selected = _selected == null ? null : _service.getById(_selected!.id);
+    if (userLoc == null ||
+        selected == null ||
+        selected.status != RequestStatus.inProgress) {
+      if (_routeResult != null) setState(() => _routeResult = null);
+      return;
+    }
+    final dest = tryParseLatLng(selected.locationText);
+    if (dest == null) return;
+    if (_loadingRoute) return;
+    setState(() => _loadingRoute = true);
+    try {
+      final result = await RoutingService.instance.getRoute(userLoc, dest);
+      if (!mounted) return;
+      setState(() => _routeResult = result);
+    } finally {
+      if (mounted) setState(() => _loadingRoute = false);
+    }
+  }
+
+  Future<void> _openRequestDetail(ReliefRequest request) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RequestDetailScreen(requestId: request.id),
+      ),
+    );
+    if (!mounted) return;
+    if (result == true) {
+      setState(() {});
+      await _maybeRefreshRoute();
+    }
+  }
+
+  void _showZoneSheet(RequestCluster cluster) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ZoneSummarySheet(
+        cluster: cluster,
+        isOffline: !SyncService.instance.online,
+        onSelectRequest: _openRequestDetail,
+      ),
+    );
   }
 
   @override
@@ -117,6 +173,8 @@ class _MapScreenState extends State<MapScreen> {
                     onChanged: (v) => setState(() => _filter = v),
                   ),
                   const SizedBox(height: 12),
+                  const _UrgencyLegend(),
+                  const SizedBox(height: 10),
                   _GpsStatus(
                     location: _userLocation,
                     errorText: _gpsError,
@@ -129,11 +187,25 @@ class _MapScreenState extends State<MapScreen> {
                       requests: filtered,
                       height: null,
                       focusRequestId: selected?.id,
-                      onSelectRequest: (r) => setState(() => _selected = r),
+                      onSelectRequest: (r) async {
+                        final current = _selected;
+                        if (current?.id == r.id) {
+                          await _openRequestDetail(r);
+                          return;
+                        }
+                        if (!mounted) return;
+                        setState(() {
+                          _selected = r;
+                          _routeResult = null;
+                        });
+                        await _maybeRefreshRoute();
+                      },
+                      onZoneTap: _showZoneSheet,
                       showHint: false,
                       userLocation: _userLocation,
                       followUserLocation: selected == null,
                       controller: _mapController,
+                      routeResult: _routeResult,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -147,16 +219,14 @@ class _MapScreenState extends State<MapScreen> {
                 bottom: 90,
                 child: _SelectedCard(
                   request: selected,
-                  onClear: () => setState(() => _selected = null),
+                  onClear: () => setState(() {
+                    _selected = null;
+                    _routeResult = null;
+                  }),
                   onView: () async {
-                    final r = selected;
-                    final result = await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => RequestDetailScreen(requestId: r.id),
-                      ),
-                    );
-                    if (!mounted) return;
-                    if (result == true) setState(() {});
+                    final request = selected;
+                    if (request == null) return;
+                    await _openRequestDetail(request);
                   },
                 ),
               ),
@@ -206,8 +276,69 @@ class _MapScreenState extends State<MapScreen> {
         activeOnly.where((r) => r.type == RequestType.shelter).toList(),
       'supplies' =>
         activeOnly.where((r) => r.type == RequestType.food).toList(),
+      'medical' =>
+        activeOnly.where((r) => r.type == RequestType.medical).toList(),
+      'rescue' =>
+        activeOnly.where((r) => r.type == RequestType.rescue).toList(),
       _ => activeOnly,
     };
+  }
+}
+
+class _UrgencyLegend extends StatelessWidget {
+  const _UrgencyLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        children: const [
+          _LegendItem(label: 'Critical', color: Color(0xFFC62828)),
+          _LegendItem(label: 'High', color: Color(0xFFEF6C00)),
+          _LegendItem(label: 'Medium', color: Color(0xFFF9A825)),
+          _LegendItem(label: 'Low', color: Color(0xFF607D8B)),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+            color: const Color(0xFF52525B),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -360,27 +491,27 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const chips = [
+      (key: 'live',     label: 'LIVE SIGNALS', icon: Icons.wifi_tethering),
+      (key: 'shelters', label: 'SHELTERS',      icon: Icons.home),
+      (key: 'supplies', label: 'SUPPLIES',      icon: Icons.restaurant),
+      (key: 'medical',  label: 'MEDICAL',       icon: Icons.medical_services),
+      (key: 'rescue',   label: 'RESCUE',        icon: Icons.warning_amber),
+    ];
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _Chip(
-            label: 'LIVE SIGNALS',
-            isActive: value == 'live',
-            onTap: () => onChanged('live'),
-          ),
-          const SizedBox(width: 8),
-          _Chip(
-            label: 'SHELTERS',
-            isActive: value == 'shelters',
-            onTap: () => onChanged('shelters'),
-          ),
-          const SizedBox(width: 8),
-          _Chip(
-            label: 'SUPPLIES',
-            isActive: value == 'supplies',
-            onTap: () => onChanged('supplies'),
-          ),
+          for (var i = 0; i < chips.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            _Chip(
+              label: chips[i].label,
+              icon: chips[i].icon,
+              isActive: value == chips[i].key,
+              onTap: () => onChanged(chips[i].key),
+            ),
+          ],
         ],
       ),
     );
@@ -390,11 +521,13 @@ class _FilterChips extends StatelessWidget {
 class _Chip extends StatelessWidget {
   const _Chip({
     required this.label,
+    required this.icon,
     required this.isActive,
     required this.onTap,
   });
 
   final String label;
+  final IconData icon;
   final bool isActive;
   final VoidCallback onTap;
 
@@ -408,19 +541,26 @@ class _Chip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: border),
         ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: fg,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.2,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: fg),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
         ),
       ),
     );
