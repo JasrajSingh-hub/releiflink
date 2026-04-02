@@ -137,12 +137,44 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
             ),
             const SizedBox(height: 18),
             Text(
-              'CURRENT LOCATION',
+              'LOCATION',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: const Color(0xFF71717A),
                 fontWeight: FontWeight.w900,
                 letterSpacing: 2.0,
               ),
+            ),
+            const SizedBox(height: 10),
+            // Location source toggle
+            Row(
+              children: [
+                Expanded(
+                  child: _LocationToggleBtn(
+                    label: 'MY LOCATION',
+                    icon: Icons.my_location,
+                    isActive: !_manualLocation,
+                    onTap: _submitting ? null : _startLiveLocation,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _LocationToggleBtn(
+                    label: 'PICK ON MAP',
+                    icon: Icons.pin_drop,
+                    isActive: _manualLocation,
+                    onTap: _submitting
+                        ? null
+                        : () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tap anywhere on the map below to set location'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             _LocationRow(
@@ -479,6 +511,53 @@ class _PeopleStepper extends StatelessWidget {
             icon: const Icon(Icons.add),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LocationToggleBtn extends StatelessWidget {
+  const _LocationToggleBtn({
+    required this.label,
+    required this.icon,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isActive;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isActive ? const Color(0xFF111827) : Colors.white;
+    final fg = isActive ? Colors.white : const Color(0xFF111827);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: fg),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.4,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
