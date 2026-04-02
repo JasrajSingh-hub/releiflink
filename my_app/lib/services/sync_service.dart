@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'outbox_service.dart';
 import 'remote_sync_service.dart';
 import 'request_service.dart';
-import 'auth_service.dart';
 
 class SyncService extends ChangeNotifier {
   SyncService._();
@@ -65,11 +64,6 @@ class SyncService extends ChangeNotifier {
 
     try {
       final pending = OutboxService.instance.getPending();
-      final token = AuthService.instance.token;
-      if (pending.isNotEmpty && (token == null || token.isEmpty)) {
-        _status = 'Login required to sync changes';
-        return;
-      }
       if (pending.isEmpty) {
         final remote = await RemoteSyncService.instance.fetchAllRequests();
         await RequestService.instance.applyRemoteRequests(remote);
