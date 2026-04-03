@@ -13,6 +13,7 @@ class RemoteSyncService {
 
   static const Duration _connectTimeout = Duration(seconds: 5);
   static const Duration _requestTimeout = Duration(seconds: 10);
+  static const Duration _healthTimeout = Duration(seconds: 2);
 
   Uri _uri(String path) {
     final baseUrl = AppConfig.remoteBaseUrl;
@@ -21,6 +22,21 @@ class RemoteSyncService {
     }
     final trimmed = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
     return Uri.parse('$trimmed$path');
+  }
+
+  Future<bool> checkHealth() async {
+    final uri = _uri('/health');
+    final client = HttpClient();
+    client.connectionTimeout = _healthTimeout;
+    try {
+      final request = await client.getUrl(uri).timeout(_healthTimeout);
+      final response = await request.close().timeout(_healthTimeout);
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close(force: true);
+    }
   }
 
   Future<List<Map<String, Object?>>> fetchAllRequests() async {

@@ -75,3 +75,14 @@ Role-protected:
 
 - Postgres tables are created automatically on startup.
 - Docker init schema: `releiflink/backend/db/schema.sql`
+## Dev mode (disable auth)
+
+If you want syncing to work without JWT while developing, set:
+
+- `AUTH_DISABLED=1`
+
+PowerShell (current terminal only):
+
+- `$env:AUTH_DISABLED="1"`
+
+Then restart the backend. `GET /api/health` will show `authDisabled: true`.

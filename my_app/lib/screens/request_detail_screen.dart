@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/request.dart';
 import '../services/request_service.dart';
+import '../theme/contrast.dart';
 import '../widgets/relief_map.dart';
 
 class RequestDetailScreen extends StatefulWidget {
@@ -224,6 +225,7 @@ class _BottomActions extends StatelessWidget {
       RequestStatus.completed => 'COMPLETED',
     };
     final primaryEnabled = status != RequestStatus.completed;
+    final fg = contrastingTextColor(primaryEnabled ? accent : const Color(0xFF16A34A));
 
     return SafeArea(
       top: false,
@@ -251,7 +253,7 @@ class _BottomActions extends StatelessWidget {
                 onPressed: primaryEnabled ? () async => onPrimary() : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryEnabled ? accent : const Color(0xFF16A34A),
-                  foregroundColor: Colors.white,
+                  foregroundColor: fg,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Padding(
@@ -259,7 +261,7 @@ class _BottomActions extends StatelessWidget {
                   child: Text(
                     primaryLabel,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white,
+                          color: fg,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 2.0,
                         ),

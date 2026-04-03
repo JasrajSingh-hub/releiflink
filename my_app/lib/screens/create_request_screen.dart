@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -32,6 +33,9 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   RequestType _type = RequestType.medical;
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _manualLocationController =
+      TextEditingController();
+  final TextEditingController _peopleController = TextEditingController();
 
   bool _submitting = false;
   int _peopleCount = 1;
@@ -43,10 +47,18 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   bool _manualLocation = false;
 
   @override
+  void initState() {
+    super.initState();
+    _peopleController.text = '$_peopleCount';
+  }
+
+  @override
   void dispose() {
     _posSub?.cancel();
     _descriptionController.dispose();
     _locationController.dispose();
+    _manualLocationController.dispose();
+    _peopleController.dispose();
     super.dispose();
   }
 
@@ -112,7 +124,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               maxLines: 4,
               decoration: const InputDecoration(
                 hintText:
-                    'Briefly describe the situation (e.g., rising water, injuries, trapped people)…',
+                    'Briefly describe the situation (e.g., rising water, injuries, trapped people)...',
               ),
               validator: (v) {
                 final value = (v ?? '').trim();
@@ -133,7 +145,18 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
             const SizedBox(height: 10),
             _PeopleStepper(
               value: _peopleCount,
-              onChanged: (v) => setState(() => _peopleCount = v),
+              controller: _peopleController,
+              disabled: _submitting,
+              onChanged: (v) {
+                final next = v.clamp(1, 999);
+                setState(() => _peopleCount = next);
+                if (_peopleController.text != '$next') {
+                  _peopleController.text = '$next';
+                  _peopleController.selection = TextSelection.fromPosition(
+                    TextPosition(offset: _peopleController.text.length),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 18),
             Text(
@@ -154,6 +177,15 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               errorText: _gpsError,
               errorCode: _gpsErrorCode,
               onDetect: _startLiveLocation,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _manualLocationController,
+              enabled: !_submitting,
+              decoration: const InputDecoration(
+                hintText: 'Type area / landmark (manual location)',
+                prefixIcon: Icon(Icons.edit_location_alt),
+              ),
             ),
             const SizedBox(height: 12),
             ReliefMap(
@@ -292,18 +324,25 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     });
   }
 
+  String _effectiveLocationText() {
+    final manual = _manualLocationController.text.trim();
+    if (manual.isNotEmpty) return manual;
+    return _locationController.text.trim();
+  }
+
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    if (_locationController.text.trim().isEmpty) {
+    final locationText = _effectiveLocationText();
+    if (locationText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tap AUTO to detect your location')),
+        const SnackBar(
+          content: Text('Use AUTO GPS, tap the map, or type manual location'),
+        ),
       );
       return;
     }
-
-    final locationText = _locationController.text.trim();
 
     setState(() => _submitting = true);
     try {
@@ -321,8 +360,15 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
         setState(() {
           _descriptionController.clear();
           _locationController.clear();
+          _manualLocationController.clear();
           _peopleCount = 1;
+          _peopleController.text = '1';
           _type = RequestType.medical;
+          _gpsError = null;
+          _gpsErrorCode = null;
+          _tracking = false;
+          _locating = false;
+          _manualLocation = false;
         });
       }
       widget.onSubmitted?.call();
@@ -333,7 +379,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   }
 
   ReliefRequest? _previewRequest() {
-    final locationText = _locationController.text.trim();
+    final locationText = _effectiveLocationText();
     if (locationText.isEmpty) return null;
     final now = DateTime.now();
     return ReliefRequest(
@@ -445,10 +491,17 @@ class _TypeTile extends StatelessWidget {
 }
 
 class _PeopleStepper extends StatelessWidget {
-  const _PeopleStepper({required this.value, required this.onChanged});
+  const _PeopleStepper({
+    required this.value,
+    required this.controller,
+    required this.onChanged,
+    required this.disabled,
+  });
 
   final int value;
+  final TextEditingController controller;
   final ValueChanged<int> onChanged;
+  final bool disabled;
 
   @override
   Widget build(BuildContext context) {
@@ -461,21 +514,56 @@ class _PeopleStepper extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: value <= 1 ? null : () => onChanged(value - 1),
+            onPressed:
+                disabled || value <= 1 ? null : () => onChanged(value - 1),
             icon: const Icon(Icons.remove),
           ),
           Expanded(
             child: Center(
-              child: Text(
-                '$value',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 120),
+                child: TextField(
+                  controller: controller,
+                  enabled: !disabled,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: '1',
+                  ),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF111827),
+                      ),
+                  onChanged: (raw) {
+                    if (raw.trim().isEmpty) return;
+                    final parsed = int.tryParse(raw);
+                    if (parsed == null) return;
+                    final next = parsed.clamp(1, 999);
+                    if ('$next' != raw) {
+                      controller.text = '$next';
+                      controller.selection = TextSelection.fromPosition(
+                        TextPosition(offset: controller.text.length),
+                      );
+                    }
+                    if (next != value) onChanged(next);
+                  },
+                  onEditingComplete: () {
+                    if (controller.text.trim().isNotEmpty) return;
+                    controller.text = '1';
+                    controller.selection = const TextSelection.collapsed(
+                      offset: 1,
+                    );
+                    if (value != 1) onChanged(1);
+                  },
+                ),
               ),
             ),
           ),
           IconButton(
-            onPressed: value >= 999 ? null : () => onChanged(value + 1),
+            onPressed:
+                disabled || value >= 999 ? null : () => onChanged(value + 1),
             icon: const Icon(Icons.add),
           ),
         ],
@@ -516,6 +604,9 @@ class _LocationRow extends StatelessWidget {
               : (locating
                     ? 'Detecting location...'
                     : 'Tap AUTO to detect location'));
+    final titleColor = error != null
+        ? const Color(0xFFDC2626)
+        : (has ? const Color(0xFF111827) : const Color(0xFF71717A));
 
     final status = error != null
         ? 'GPS: ERROR'
@@ -551,7 +642,10 @@ class _LocationRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(
                     context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+                  ).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: titleColor,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(

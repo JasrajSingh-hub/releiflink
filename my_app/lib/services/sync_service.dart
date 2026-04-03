@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -63,6 +64,12 @@ class SyncService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final ok = await RemoteSyncService.instance.checkHealth();
+      if (!ok) {
+        _status = 'Backend unreachable';
+        return;
+      }
+
       final pending = OutboxService.instance.getPending();
       if (pending.isEmpty) {
         final remote = await RemoteSyncService.instance.fetchAllRequests();
@@ -83,6 +90,11 @@ class SyncService extends ChangeNotifier {
           sent += 1;
         } catch (e) {
           await OutboxService.instance.markFailed(item.id, e);
+          if (e is SocketException || e is TimeoutException) {
+            // Fail fast: avoid waiting N * timeout when backend is unreachable.
+            _status = 'Backend unreachable';
+            break;
+          }
         }
       }
 
