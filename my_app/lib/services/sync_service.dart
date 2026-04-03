@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
+import '../config/app_config.dart';
+import '../storage/local_store.dart';
 import 'outbox_service.dart';
 import 'remote_sync_service.dart';
 import 'request_service.dart';
@@ -15,6 +17,9 @@ class SyncService extends ChangeNotifier {
 
   final _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _sub;
+  StreamSubscription? _outboxSub;
+  Timer? _autoTimer;
+  Timer? _outboxDebounce;
 
   bool _online = true;
   bool _syncing = false;
@@ -37,12 +42,40 @@ class SyncService extends ChangeNotifier {
         await syncNow();
       }
     });
+
+    _startOutboxAutoSync();
+    startAutoSync(interval: AppConfig.autoSyncInterval);
   }
 
   @override
   void dispose() {
     _sub?.cancel();
+    _outboxSub?.cancel();
+    _autoTimer?.cancel();
+    _outboxDebounce?.cancel();
     super.dispose();
+  }
+
+  void startAutoSync({Duration interval = const Duration(seconds: 30)}) {
+    _autoTimer?.cancel();
+    _autoTimer = Timer.periodic(interval, (_) async {
+      if (!RemoteSyncService.instance.enabled) return;
+      if (!_online) return;
+      await syncNow();
+    });
+  }
+
+  void _startOutboxAutoSync() {
+    _outboxSub?.cancel();
+    _outboxSub = LocalStore.outboxBox().watch().listen((_) {
+      // When something is enqueued (create/update/status), push it quickly.
+      _outboxDebounce?.cancel();
+      _outboxDebounce = Timer(const Duration(milliseconds: 300), () async {
+        if (!RemoteSyncService.instance.enabled) return;
+        if (!_online) return;
+        await syncNow();
+      });
+    });
   }
 
   Future<void> syncNow({bool force = false}) async {

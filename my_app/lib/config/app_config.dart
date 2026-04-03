@@ -7,4 +7,7 @@ class AppConfig {
   //
   // Example: 'https://example.com/api'
   static const String? remoteBaseUrl = 'http://10.0.2.2:8080/api'; // e.g. 'http://10.0.2.2:8080/api'
+
+  // Auto-sync interval (very aggressive; increases battery/network usage).
+  static const Duration autoSyncInterval = Duration(seconds: 2);
 }
