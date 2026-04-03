@@ -194,6 +194,7 @@ class _SecondaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const titleColor = Color(0xFF111827);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
@@ -229,7 +230,7 @@ class _SecondaryCard extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
-                    color: const Color(0xFF111827),
+                    color: titleColor,
                   ),
             ),
             const SizedBox(height: 4),
@@ -259,6 +260,7 @@ class _MiniInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const valueColor = Color(0xFF111827);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -283,9 +285,9 @@ class _MiniInfoCard extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-              color: const Color(0xFF111827),
-            ),
+                  fontWeight: FontWeight.w900,
+                  color: valueColor,
+                ),
           ),
         ],
       ),

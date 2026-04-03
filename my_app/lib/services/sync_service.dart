@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -6,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'outbox_service.dart';
 import 'remote_sync_service.dart';
 import 'request_service.dart';
-import 'auth_service.dart';
 
 class SyncService extends ChangeNotifier {
   SyncService._();
@@ -64,12 +64,13 @@ class SyncService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final pending = OutboxService.instance.getPending();
-      final token = AuthService.instance.token;
-      if (pending.isNotEmpty && (token == null || token.isEmpty)) {
-        _status = 'Login required to sync changes';
+      final ok = await RemoteSyncService.instance.checkHealth();
+      if (!ok) {
+        _status = 'Backend unreachable';
         return;
       }
+
+      final pending = OutboxService.instance.getPending();
       if (pending.isEmpty) {
         final remote = await RemoteSyncService.instance.fetchAllRequests();
         await RequestService.instance.applyRemoteRequests(remote);
@@ -89,6 +90,11 @@ class SyncService extends ChangeNotifier {
           sent += 1;
         } catch (e) {
           await OutboxService.instance.markFailed(item.id, e);
+          if (e is SocketException || e is TimeoutException) {
+            // Fail fast: avoid waiting N * timeout when backend is unreachable.
+            _status = 'Backend unreachable';
+            break;
+          }
         }
       }
 

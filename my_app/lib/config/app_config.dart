@@ -6,5 +6,5 @@ class AppConfig {
   // - To enable real syncing, set a backend URL and run `Sync now`.
   //
   // Example: 'https://example.com/api'
-  static const String? remoteBaseUrl = null; // e.g. 'http://10.0.2.2:8080/api'
+  static const String? remoteBaseUrl = 'http://10.0.2.2:8080/api'; // e.g. 'http://10.0.2.2:8080/api'
 }

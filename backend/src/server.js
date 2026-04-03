@@ -13,9 +13,15 @@ const controllers = {
   requests: createRequestsController({ pool }),
 };
 
-const app = createApp({ pool, jwtSecret: config.jwtSecret, controllers });
+const app = createApp({
+  pool,
+  jwtSecret: config.jwtSecret,
+  controllers,
+  authDisabled: config.authDisabled,
+});
 
 app.listen(config.port, "0.0.0.0", () => {
   console.log(`Backend listening on http://localhost:${config.port}`);
   console.log(`Health:  http://localhost:${config.port}/api/health`);
+  console.log(`Auth disabled: ${config.authDisabled}`);
 });

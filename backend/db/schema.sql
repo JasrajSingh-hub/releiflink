@@ -11,12 +11,16 @@ CREATE TABLE IF NOT EXISTS requests (
   status TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
+  is_life_threatening BOOLEAN NOT NULL DEFAULT false,
+  location_risk TEXT NOT NULL DEFAULT 'low',
   raw JSONB NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS requests_updated_at_idx ON requests (updated_at DESC);
 CREATE INDEX IF NOT EXISTS requests_status_idx ON requests (status);
 CREATE INDEX IF NOT EXISTS requests_type_idx ON requests (type);
+CREATE INDEX IF NOT EXISTS requests_priority_idx ON requests (priority);
+CREATE INDEX IF NOT EXISTS requests_location_risk_idx ON requests (location_risk);
 -- Minimal auth users table (no registration endpoint; seed manually).
 -- password_hash should be a bcrypt hash.
 CREATE TABLE IF NOT EXISTS users (

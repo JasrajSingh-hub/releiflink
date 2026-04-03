@@ -3,7 +3,6 @@ import 'dart:io';
 
 import '../config/app_config.dart';
 import '../models/outbox_item.dart';
-import 'auth_service.dart';
 
 class RemoteSyncService {
   RemoteSyncService._();
@@ -14,6 +13,7 @@ class RemoteSyncService {
 
   static const Duration _connectTimeout = Duration(seconds: 5);
   static const Duration _requestTimeout = Duration(seconds: 10);
+  static const Duration _healthTimeout = Duration(seconds: 2);
 
   Uri _uri(String path) {
     final baseUrl = AppConfig.remoteBaseUrl;
@@ -24,16 +24,27 @@ class RemoteSyncService {
     return Uri.parse('$trimmed$path');
   }
 
+  Future<bool> checkHealth() async {
+    final uri = _uri('/health');
+    final client = HttpClient();
+    client.connectionTimeout = _healthTimeout;
+    try {
+      final request = await client.getUrl(uri).timeout(_healthTimeout);
+      final response = await request.close().timeout(_healthTimeout);
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<List<Map<String, Object?>>> fetchAllRequests() async {
     final uri = _uri('/requests');
     final client = HttpClient();
     client.connectionTimeout = _connectTimeout;
     try {
       final request = await client.getUrl(uri).timeout(_requestTimeout);
-      final token = AuthService.instance.token;
-      if (token != null && token.isNotEmpty) {
-        request.headers.set('Authorization', 'Bearer $token');
-      }
       final response = await request.close().timeout(_requestTimeout);
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       final body = await utf8.decoder.bind(response).join().timeout(_requestTimeout);
@@ -70,10 +81,6 @@ class RemoteSyncService {
     client.connectionTimeout = _connectTimeout;
     try {
       final request = await client.openUrl(method, uri).timeout(_requestTimeout);
-      final token = AuthService.instance.token;
-      if (token != null && token.isNotEmpty) {
-        request.headers.set('Authorization', 'Bearer $token');
-      }
       request.headers.contentType = ContentType.json;
       request.add(utf8.encode(jsonEncode(item.payload)));
       final response = await request.close().timeout(_requestTimeout);

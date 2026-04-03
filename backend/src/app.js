@@ -4,10 +4,20 @@ import { authRoutes } from "./routes/auth_routes.js";
 import { requestsRoutes } from "./routes/requests_routes.js";
 import { authMiddleware } from "./middleware/auth.js";
 
-export function createApp({ pool, jwtSecret, controllers }) {
+export function createApp({ pool, jwtSecret, controllers, authDisabled = false }) {
   const app = express();
 
   app.use(express.json({ limit: "2mb" }));
+
+  // Minimal request logging (no bodies, no auth headers).
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on("finish", () => {
+      const ms = Date.now() - start;
+      console.log(`${res.statusCode} ${req.method} ${req.originalUrl} (${ms}ms)`);
+    });
+    next();
+  });
 
   // Minimal CORS (for dev/testing).
   app.use((req, res, next) => {
@@ -19,13 +29,16 @@ export function createApp({ pool, jwtSecret, controllers }) {
   });
 
   app.get("/api/health", (req, res) => {
-    res.json({ ok: true });
+    res.json({ ok: true, authDisabled });
   });
 
-  const auth = authMiddleware(jwtSecret);
+  const auth = authDisabled ? null : authMiddleware(jwtSecret);
 
   app.use("/auth", authRoutes(controllers.auth));
-  app.use("/api", requestsRoutes({ controller: controllers.requests, auth }));
+  app.use(
+    "/api",
+    requestsRoutes({ controller: controllers.requests, auth, authDisabled })
+  );
 
   // Basic error handler
   // eslint-disable-next-line no-unused-vars
