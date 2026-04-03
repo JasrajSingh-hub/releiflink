@@ -63,30 +63,23 @@ class RemoteSyncService {
   }
 
   Future<void> send(OutboxItem item) async {
-    final uri = switch (item.action) {
-      OutboxAction.createRequest || OutboxAction.updateRequest => _uri(
-        '/requests/${Uri.encodeComponent(item.requestId)}',
-      ),
-      OutboxAction.updateStatus => _uri(
-        '/requests/${Uri.encodeComponent(item.requestId)}/status',
-      ),
-    };
-
-    final method = switch (item.action) {
-      OutboxAction.createRequest || OutboxAction.updateRequest => 'PUT',
-      OutboxAction.updateStatus => 'PATCH',
-    };
-
     final client = HttpClient();
     client.connectionTimeout = _connectTimeout;
     try {
-      final request = await client.openUrl(method, uri).timeout(_requestTimeout);
+      if (item.action == OutboxAction.updateStatus) {
+        await _sendStatusUpdate(client, item);
+        return;
+      }
+
+      final uri = _uri('/requests/${Uri.encodeComponent(item.requestId)}');
+      final request = await client.openUrl('PUT', uri).timeout(_requestTimeout);
       request.headers.contentType = ContentType.json;
       request.add(utf8.encode(jsonEncode(item.payload)));
       final response = await request.close().timeout(_requestTimeout);
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       if (!ok) {
-        final body = await utf8.decoder.bind(response).join().timeout(_requestTimeout);
+        final body =
+            await utf8.decoder.bind(response).join().timeout(_requestTimeout);
         throw HttpException(
           'Sync failed (${response.statusCode}): $body',
           uri: uri,
@@ -94,6 +87,52 @@ class RemoteSyncService {
       }
     } finally {
       client.close(force: true);
+    }
+  }
+
+  Future<void> _sendStatusUpdate(HttpClient client, OutboxItem item) async {
+    final raw = item.payload['status'];
+    final status = raw is String ? raw : '';
+
+    // Backend task flow is:
+    // pending -> accept() -> assigned -> in_progress -> completed
+    //
+    // Our offline UI currently jumps pending -> inProgress directly.
+    // To keep sync reliable and prevent double assignment, we:
+    // 1) Attempt accept (ignore 409 Already assigned)
+    // 2) Then patch status (in_progress / completed)
+
+    final acceptUri = _uri('/requests/${Uri.encodeComponent(item.requestId)}/accept');
+    try {
+      final acceptReq = await client.openUrl('POST', acceptUri).timeout(_requestTimeout);
+      final acceptRes = await acceptReq.close().timeout(_requestTimeout);
+      final ok = acceptRes.statusCode >= 200 && acceptRes.statusCode < 300;
+      if (!ok && acceptRes.statusCode != 409) {
+        final body = await utf8.decoder.bind(acceptRes).join().timeout(_requestTimeout);
+        throw HttpException('Accept failed (${acceptRes.statusCode}): $body', uri: acceptUri);
+      }
+    } on HttpException {
+      rethrow;
+    }
+
+    final next = switch (status) {
+      'inProgress' || 'in_progress' || 'in-progress' => 'in_progress',
+      'completed' => 'completed',
+      _ => status,
+    };
+
+    final uri = _uri('/requests/${Uri.encodeComponent(item.requestId)}/status');
+    final request = await client.openUrl('PATCH', uri).timeout(_requestTimeout);
+    request.headers.contentType = ContentType.json;
+    request.add(utf8.encode(jsonEncode({'status': next})));
+    final response = await request.close().timeout(_requestTimeout);
+    final ok = response.statusCode >= 200 && response.statusCode < 300;
+    if (!ok) {
+      final body = await utf8.decoder.bind(response).join().timeout(_requestTimeout);
+      throw HttpException(
+        'Sync failed (${response.statusCode}): $body',
+        uri: uri,
+      );
     }
   }
 }

@@ -297,7 +297,7 @@ export async function updateRequestStatus(pool, requestId, status) {
   await pool.query(
     `UPDATE requests
      SET status = $2,
-         updated_at = $3,
+         updated_at = $3::timestamptz,
          priority = $4,
          raw = $5
      WHERE id = $1`,
@@ -357,17 +357,17 @@ export async function acceptRequest(pool, { requestId, volunteerId } = {}) {
     `UPDATE requests
      SET status = 'assigned',
          assigned_to = $2,
-         updated_at = $3,
+         updated_at = $3::timestamptz,
          raw = jsonb_set(
            jsonb_set(
              jsonb_set(raw, '{status}', to_jsonb('assigned'::text), true),
              '{assignedTo}', to_jsonb($2::text), true
            ),
-           '{updatedAt}', to_jsonb($3::text), true
+           '{updatedAt}', to_jsonb($4::text), true
          )
      WHERE id = $1 AND status = 'pending'
      RETURNING raw`,
-    [String(requestId), String(volunteerId), updatedAt]
+    [String(requestId), String(volunteerId), updatedAt, updatedAt]
   );
 
   return rows[0]?.raw ?? null;
@@ -409,14 +409,14 @@ export async function updateVolunteerTaskStatus(pool, { requestId, volunteerId, 
   const { rows } = await pool.query(
     `UPDATE requests
      SET status = $4,
-         updated_at = $5,
+         updated_at = $5::timestamptz,
          raw = jsonb_set(
            jsonb_set(raw, '{status}', to_jsonb($4::text), true),
-           '{updatedAt}', to_jsonb($5::text), true
+           '{updatedAt}', to_jsonb($6::text), true
          )
      WHERE id = $1 AND assigned_to = $2 AND status = $3
      RETURNING raw`,
-    [String(requestId), String(volunteerId), String(current), String(normalizedNext), updatedAt]
+    [String(requestId), String(volunteerId), String(current), String(normalizedNext), updatedAt, updatedAt]
   );
 
   const updated = rows[0]?.raw ?? null;
