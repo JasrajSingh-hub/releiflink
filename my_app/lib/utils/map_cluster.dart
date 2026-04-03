@@ -19,15 +19,17 @@ class RequestCluster {
 
   int get count => requests.length;
 
-  /// Pending requests (no volunteer yet).
-  List<ReliefRequest> get pending =>
-      requests.where((r) => r.status == RequestStatus.pending).toList();
+  /// Open requests (no volunteer yet).
+  List<ReliefRequest> get open =>
+      requests.where((r) => r.status == RequestStatus.open).toList();
 
   /// In-progress requests (volunteer assigned).
   List<ReliefRequest> get inProgress =>
-      requests.where((r) => r.status == RequestStatus.inProgress).toList();
+      requests
+          .where((r) => r.status == RequestStatus.assigned || r.status == RequestStatus.inProgress)
+          .toList();
 
-  int get pendingCount => pending.length;
+  int get pendingCount => open.length;
   int get inProgressCount => inProgress.length;
 
   /// True if at least one request has a volunteer assigned.
@@ -36,7 +38,7 @@ class RequestCluster {
   /// Highest priority among PENDING requests only.
   /// Falls back to overall dominant if all are in-progress.
   RequestPriority get dominantPriority {
-    final active = pending.isNotEmpty ? pending : requests;
+    final active = open.isNotEmpty ? open : requests;
     return active.reduce(
       (a, b) => priorityRank(a.priority) <= priorityRank(b.priority) ? a : b,
     ).priority;

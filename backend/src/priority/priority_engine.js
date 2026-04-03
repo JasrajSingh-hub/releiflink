@@ -16,11 +16,12 @@ function parseLatLngFromLocationText(locationText) {
 }
 
 function normalizeStatus(input) {
-  const raw = String(input ?? "pending").trim();
+  const raw = String(input ?? "open").trim();
   const s = raw.toLowerCase();
   if (s === "inprogress" || s === "in_progress" || s === "in-progress") return "in_progress";
-  if (s === "pending" || s === "assigned" || s === "completed") return s;
-  return "pending";
+  if (s === "pending" || s === "open") return "open";
+  if (s === "assigned" || s === "completed") return s;
+  return "open";
 }
 
 export function calculatePriority(request, { now = new Date() } = {}) {

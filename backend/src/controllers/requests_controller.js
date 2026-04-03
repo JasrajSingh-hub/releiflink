@@ -3,7 +3,6 @@ import crypto from "node:crypto";
 import {
   acceptRequest,
   createRequest,
-  getRequestRowById,
   listNearbyPendingRequests,
   listRequests,
   listVolunteerTasks,
@@ -63,12 +62,17 @@ export function createRequestsController({ pool }) {
         return res.status(401).json({ error: "Missing auth" });
       }
 
-      const updated = await acceptRequest(pool, { requestId, volunteerId });
-      if (updated) return res.json(updated);
+      const result = await acceptRequest(pool, { requestId, volunteerId });
+      if (result.ok) return res.status(200).json(result.request);
 
-      const existing = await getRequestRowById(pool, requestId);
-      if (!existing) return res.status(404).json({ error: "Request not found" });
-      return res.status(409).json({ error: "Already assigned" });
+      if (result.reason === "not_found") {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      console.warn(
+        `accept conflict requestId=${requestId} volunteerId=${volunteerId} status=${result.status ?? ""} assignedTo=${result.assignedTo ?? ""}`
+      );
+      return res.status(409).json({ error: "Request already accepted" });
     },
 
     async myTasks(req, res) {

@@ -370,7 +370,7 @@ class _UrgencyMarkerPin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = isFocused ? 28.0 : 24.0;
-    final isAssigned = status == RequestStatus.inProgress;
+    final isAssigned = status == RequestStatus.assigned || status == RequestStatus.inProgress;
 
     return Center(
       child: Column(

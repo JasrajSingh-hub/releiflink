@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 
 import '../models/request.dart';
 import '../storage/local_store.dart';
+import 'conflict_service.dart';
 import 'outbox_service.dart';
 import '../models/outbox_item.dart';
 
@@ -62,6 +63,7 @@ class RequestService extends ChangeNotifier {
       action: OutboxAction.createRequest,
       requestId: request.id,
       payload: request.toJson(),
+      baseUpdatedAt: null,
     );
     _rebuildCache();
     notifyListeners();
@@ -79,6 +81,7 @@ class RequestService extends ChangeNotifier {
     if (existing == null) {
       throw StateError('Request not found');
     }
+    final baseUpdatedAt = existing.updatedAt;
 
     final nextType = type ?? existing.type;
     final nextPeopleCount = peopleCount ?? existing.peopleCount;
@@ -98,6 +101,7 @@ class RequestService extends ChangeNotifier {
       action: OutboxAction.updateRequest,
       requestId: updated.id,
       payload: updated.toJson(),
+      baseUpdatedAt: baseUpdatedAt,
     );
 
     _rebuildCache();
@@ -110,10 +114,35 @@ class RequestService extends ChangeNotifier {
     for (final json in remote) {
       final incoming = ReliefRequest.fromJson(json);
       final existing = getById(incoming.id);
-      if (existing == null || incoming.updatedAt.isAfter(existing.updatedAt)) {
+      if (existing == null) {
         await _requestsBox.put(incoming.id, incoming.toJson());
         changed = true;
+        continue;
       }
+
+      if (!incoming.updatedAt.isAfter(existing.updatedAt)) {
+        continue;
+      }
+
+      final pendingLocal = OutboxService.instance
+          .getPending()
+          .where((i) => i.requestId == incoming.id)
+          .toList();
+
+      if (pendingLocal.isNotEmpty) {
+        // Minimal conflict handling: server wins; preserve local snapshot for review.
+        await ConflictService.instance.add(
+          requestId: incoming.id,
+          action: pendingLocal.first.action,
+          local: existing.toJson(),
+          remote: incoming.toJson(),
+          message: 'Server changed this request while you had unsynced edits.',
+        );
+        await OutboxService.instance.removeByRequestId(incoming.id);
+      }
+
+      await _requestsBox.put(incoming.id, incoming.toJson());
+      changed = true;
     }
     if (changed) {
       _rebuildCache();
@@ -126,7 +155,7 @@ class RequestService extends ChangeNotifier {
     if (existing == null) {
       throw StateError('Request not found');
     }
-    if (existing.status != RequestStatus.pending) {
+    if (existing.status != RequestStatus.open) {
       return existing;
     }
     final updated = existing.copyWith(status: RequestStatus.inProgress);
@@ -134,7 +163,8 @@ class RequestService extends ChangeNotifier {
     await OutboxService.instance.enqueue(
       action: OutboxAction.updateStatus,
       requestId: updated.id,
-      payload: {'status': updated.status.name},
+      payload: {'status': requestStatusToWire(updated.status)},
+      baseUpdatedAt: existing.updatedAt,
     );
     _rebuildCache();
     notifyListeners();
@@ -154,7 +184,8 @@ class RequestService extends ChangeNotifier {
     await OutboxService.instance.enqueue(
       action: OutboxAction.updateStatus,
       requestId: updated.id,
-      payload: {'status': updated.status.name},
+      payload: {'status': requestStatusToWire(updated.status)},
+      baseUpdatedAt: existing.updatedAt,
     );
     _rebuildCache();
     notifyListeners();

@@ -97,7 +97,8 @@ class _MapScreenState extends State<MapScreen> {
     final selected = _selected == null ? null : _service.getById(_selected!.id);
     if (userLoc == null ||
         selected == null ||
-        selected.status != RequestStatus.inProgress) {
+        (selected.status != RequestStatus.assigned &&
+            selected.status != RequestStatus.inProgress)) {
       if (_routeResult != null) setState(() => _routeResult = null);
       return;
     }

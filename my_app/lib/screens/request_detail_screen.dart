@@ -28,8 +28,9 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     }
 
     final accent = priorityColor(request);
-    final canAccept = request.status == RequestStatus.pending;
-    final canComplete = request.status == RequestStatus.inProgress;
+    final canAccept = request.status == RequestStatus.open;
+    final canComplete =
+        request.status == RequestStatus.assigned || request.status == RequestStatus.inProgress;
     final shortId = _shortId(request.id);
 
     return Scaffold(
@@ -220,7 +221,8 @@ class _BottomActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primaryLabel = switch (status) {
-      RequestStatus.pending => 'ACCEPT REQUEST',
+      RequestStatus.open => 'ACCEPT REQUEST',
+      RequestStatus.assigned => 'MARK COMPLETED',
       RequestStatus.inProgress => 'MARK COMPLETED',
       RequestStatus.completed => 'COMPLETED',
     };

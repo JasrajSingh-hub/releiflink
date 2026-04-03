@@ -156,7 +156,7 @@ class _RequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = priorityColor(request);
     final borderColor = Theme.of(context).dividerColor;
-    final statusText = request.status == RequestStatus.pending ? 'ACTIVE' : 'OPEN';
+    final statusText = request.status == RequestStatus.open ? 'OPEN' : 'ACTIVE';
 
     return Material(
       color: Theme.of(context).colorScheme.surface,
@@ -268,6 +268,7 @@ class _RequestCard extends StatelessWidget {
       RequestType.food => 'Supplies & Food Delivery',
       RequestType.rescue => 'Rescue Assistance Needed',
       RequestType.shelter => 'Shelter Required',
+      RequestType.other => 'Help Needed',
     };
   }
 }

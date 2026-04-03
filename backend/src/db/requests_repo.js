@@ -29,7 +29,7 @@ export async function listRequests(pool) {
 
 export async function getRequestRowById(pool, requestId) {
   const { rows } = await pool.query(
-    "SELECT raw, created_at, status, assigned_to, lat, lng FROM requests WHERE id = $1",
+    "SELECT raw, created_at, status, assigned_to, assigned_at, lat, lng FROM requests WHERE id = $1",
     [requestId]
   );
   return rows[0] ?? null;
@@ -54,12 +54,12 @@ export async function createRequest(pool, request) {
   const createdAt = request.createdAt ?? nowIso();
   const updatedAt = nowIso();
 
-  // Requests are created by users. They always start pending and unassigned.
+  // Requests are created by users. They always start open and unassigned.
   const base = {
     ...request,
     createdAt,
     updatedAt,
-    status: "pending",
+    status: "open",
     assignedTo: null,
   };
 
@@ -69,7 +69,7 @@ export async function createRequest(pool, request) {
   const saved = {
     ...savedBase,
     priority,
-    status: "pending",
+    status: "open",
     assignedTo: null,
   };
 
@@ -93,7 +93,7 @@ export async function createRequest(pool, request) {
       saved.lat == null ? null : Number(saved.lat),
       saved.lng == null ? null : Number(saved.lng),
       String(saved.priority),
-      String(saved.status ?? "pending"),
+      String(saved.status ?? "open"),
       null,
       createdAt,
       updatedAt,
@@ -126,7 +126,7 @@ export async function patchRequest(pool, requestId, patch) {
   } = patch ?? {};
 
   // If a request is already assigned/in progress/completed, keep status + assignment.
-  const preservedStatus = String(existingRow.status ?? existing?.status ?? "pending");
+  const preservedStatus = String(existingRow.status ?? existing?.status ?? "open");
   const preservedAssignedTo = existingRow.assigned_to ?? existing?.assignedTo ?? null;
 
   const merged = {
@@ -176,7 +176,7 @@ export async function patchRequest(pool, requestId, patch) {
       saved.lat == null ? null : Number(saved.lat),
       saved.lng == null ? null : Number(saved.lng),
       String(saved.priority),
-      String(saved.status ?? "pending"),
+      String(saved.status ?? "open"),
       preservedAssignedTo == null ? null : String(preservedAssignedTo),
       updatedAt,
       Boolean(saved.isLifeThreatening),
@@ -202,7 +202,7 @@ export async function upsertRequest(pool, requestId, body) {
   const updatedAt = nowIso();
 
   // Preserve assignment/status if the request is already claimed.
-  const preservedStatus = String(existingRow?.status ?? existingRow?.raw?.status ?? "pending");
+  const preservedStatus = String(existingRow?.status ?? existingRow?.raw?.status ?? "open");
   const preservedAssignedTo = existingRow?.assigned_to ?? existingRow?.raw?.assignedTo ?? null;
 
   const merged = {
@@ -264,7 +264,7 @@ export async function upsertRequest(pool, requestId, body) {
       saved.lat == null ? null : Number(saved.lat),
       saved.lng == null ? null : Number(saved.lng),
       String(saved.priority),
-      String(saved.status ?? "pending"),
+      String(saved.status ?? "open"),
       preservedAssignedTo == null ? null : String(preservedAssignedTo),
       createdAt,
       updatedAt,
@@ -324,7 +324,7 @@ export async function listNearbyPendingRequests(pool, { lat, lng, radiusKm, prio
   const params = [Number(lat), Number(lng), Number(radiusKm)];
   let i = params.length;
 
-  let where = "WHERE status = 'pending' AND lat IS NOT NULL AND lng IS NOT NULL";
+  let where = "WHERE status = 'open' AND lat IS NOT NULL AND lng IS NOT NULL";
   if (priority) {
     i += 1;
     where += ` AND priority = $${i}`;
@@ -351,28 +351,62 @@ export async function listNearbyPendingRequests(pool, { lat, lng, radiusKm, prio
 }
 
 export async function acceptRequest(pool, { requestId, volunteerId } = {}) {
-  const updatedAt = nowIso();
-
   const { rows } = await pool.query(
-    `UPDATE requests
-     SET status = 'assigned',
-         assigned_to = $2,
-         updated_at = $3::timestamptz,
-         raw = jsonb_set(
-           jsonb_set(
-             jsonb_set(raw, '{status}', to_jsonb('assigned'::text), true),
-             '{assignedTo}', to_jsonb($2::text), true
-           ),
-           '{updatedAt}', to_jsonb($4::text), true
-         )
-     WHERE id = $1 AND status = 'pending'
-     RETURNING raw`,
-    [String(requestId), String(volunteerId), updatedAt, updatedAt]
+    `WITH ts AS (SELECT now() AS t),
+     updated AS (
+       UPDATE requests r
+       SET status = 'assigned',
+           assigned_to = $2,
+           assigned_at = ts.t,
+           updated_at = ts.t,
+           raw = jsonb_set(
+             jsonb_set(
+               jsonb_set(
+                 jsonb_set(r.raw, '{status}', to_jsonb('assigned'::text), true),
+                 '{assignedTo}', to_jsonb($2::text), true
+               ),
+               '{assignedAt}', to_jsonb(ts.t::text), true
+             ),
+             '{updatedAt}', to_jsonb(ts.t::text), true
+           )
+       FROM ts
+       WHERE r.id = $1
+         AND r.status = 'open'
+         AND r.assigned_to IS NULL
+       RETURNING r.raw AS updated_raw
+     ),
+     existing AS (
+       SELECT r.raw, r.status, r.assigned_to
+       FROM requests r
+       WHERE r.id = $1
+     )
+     SELECT
+       (SELECT updated_raw FROM updated) AS updated_raw,
+       (SELECT raw FROM existing) AS existing_raw,
+       (SELECT status FROM existing) AS existing_status,
+       (SELECT assigned_to FROM existing) AS existing_assigned_to`,
+    [String(requestId), String(volunteerId)]
   );
 
-  return rows[0]?.raw ?? null;
-}
+  const row = rows[0] ?? {};
+  const updated = row.updated_raw ?? null;
+  const existing = row.existing_raw ?? null;
 
+  if (updated) return { ok: true, request: updated, alreadyAssigned: false };
+  if (!existing) return { ok: false, reason: "not_found" };
+
+  const assignedTo = row.existing_assigned_to ?? existing?.assignedTo ?? null;
+  if (assignedTo != null && String(assignedTo) === String(volunteerId)) {
+    return { ok: true, request: existing, alreadyAssigned: true };
+  }
+
+  return {
+    ok: false,
+    reason: "already_taken",
+    status: row.existing_status ?? existing?.status ?? null,
+    assignedTo,
+  };
+}
 export async function listVolunteerTasks(pool, { volunteerId } = {}) {
   const { rows } = await pool.query(
     `SELECT raw FROM requests
@@ -392,7 +426,7 @@ export async function updateVolunteerTaskStatus(pool, { requestId, volunteerId, 
     return { ok: false, reason: "forbidden" };
   }
 
-  const current = String(existingRow.status ?? existingRow.raw?.status ?? "pending");
+  const current = String(existingRow.status ?? existingRow.raw?.status ?? "open");
   const desired = String(nextStatus ?? "").toLowerCase();
 
   const allowed =

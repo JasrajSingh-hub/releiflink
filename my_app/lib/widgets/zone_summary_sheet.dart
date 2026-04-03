@@ -429,7 +429,8 @@ class _RequestListItem extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      if (request.status == RequestStatus.inProgress)
+                      if (request.status == RequestStatus.assigned ||
+                          request.status == RequestStatus.inProgress)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,

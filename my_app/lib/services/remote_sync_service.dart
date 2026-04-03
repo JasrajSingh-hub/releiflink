@@ -4,6 +4,23 @@ import 'dart:io';
 import '../config/app_config.dart';
 import '../models/outbox_item.dart';
 
+class SyncConflictException implements Exception {
+  SyncConflictException({
+    required this.requestId,
+    required this.statusCode,
+    required this.body,
+    required this.uri,
+  });
+
+  final String requestId;
+  final int statusCode;
+  final String body;
+  final Uri uri;
+
+  @override
+  String toString() => 'SyncConflictException($statusCode $uri): $body';
+}
+
 class RemoteSyncService {
   RemoteSyncService._();
 
@@ -78,12 +95,16 @@ class RemoteSyncService {
       final response = await request.close().timeout(_requestTimeout);
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       if (!ok) {
-        final body =
-            await utf8.decoder.bind(response).join().timeout(_requestTimeout);
-        throw HttpException(
-          'Sync failed (${response.statusCode}): $body',
-          uri: uri,
-        );
+        final body = await utf8.decoder.bind(response).join().timeout(_requestTimeout);
+        if (response.statusCode == 409 || response.statusCode == 403) {
+          throw SyncConflictException(
+            requestId: item.requestId,
+            statusCode: response.statusCode,
+            body: body,
+            uri: uri,
+          );
+        }
+        throw HttpException('Sync failed (${response.statusCode}): $body', uri: uri);
       }
     } finally {
       client.close(force: true);
@@ -129,6 +150,14 @@ class RemoteSyncService {
     final ok = response.statusCode >= 200 && response.statusCode < 300;
     if (!ok) {
       final body = await utf8.decoder.bind(response).join().timeout(_requestTimeout);
+      if (response.statusCode == 409 || response.statusCode == 403) {
+        throw SyncConflictException(
+          requestId: item.requestId,
+          statusCode: response.statusCode,
+          body: body,
+          uri: uri,
+        );
+      }
       throw HttpException(
         'Sync failed (${response.statusCode}): $body',
         uri: uri,

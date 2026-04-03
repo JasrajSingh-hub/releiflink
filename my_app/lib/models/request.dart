@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-enum RequestType { medical, food, rescue, shelter }
+enum RequestType { medical, food, rescue, shelter, other }
 
-enum RequestStatus { pending, inProgress, completed }
+enum RequestStatus { open, assigned, inProgress, completed }
 
 enum RequestPriority { critical, high, medium, low }
 
@@ -16,7 +16,7 @@ class ReliefRequest {
     required this.createdAt,
     required this.updatedAt,
     required this.priority,
-    this.status = RequestStatus.pending,
+    this.status = RequestStatus.open,
   });
 
   final String id;
@@ -61,14 +61,14 @@ class ReliefRequest {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'priority': priority.name,
-      'status': status.name,
+      'status': requestStatusToWire(status),
     };
   }
 
   static ReliefRequest fromJson(Map<String, Object?> json) {
     return ReliefRequest(
       id: (json['id'] as String?) ?? 'unknown',
-      type: _parseEnum(RequestType.values, json['type'], RequestType.medical),
+      type: _parseEnum(RequestType.values, json['type'], RequestType.other),
       description: (json['description'] as String?) ?? '',
       peopleCount: (json['peopleCount'] as int?) ?? 1,
       locationText: (json['locationText'] as String?) ?? '',
@@ -79,7 +79,7 @@ class ReliefRequest {
           DateTime.now(),
       priority:
           _parseEnum(RequestPriority.values, json['priority'], RequestPriority.low),
-      status: _parseEnum(RequestStatus.values, json['status'], RequestStatus.pending),
+      status: parseRequestStatus(json['status']),
     );
   }
 }
@@ -121,12 +121,14 @@ String requestTypeLabel(RequestType t) {
     RequestType.food => 'Food',
     RequestType.rescue => 'Rescue',
     RequestType.shelter => 'Shelter',
+    RequestType.other => 'Other',
   };
 }
 
 String requestStatusLabel(RequestStatus s) {
   return switch (s) {
-    RequestStatus.pending => 'Pending',
+    RequestStatus.open => 'Open',
+    RequestStatus.assigned => 'Assigned',
     RequestStatus.inProgress => 'In Progress',
     RequestStatus.completed => 'Completed',
   };
@@ -147,12 +149,14 @@ IconData requestTypeIcon(RequestType t) {
     RequestType.food => Icons.restaurant,
     RequestType.rescue => Icons.warning_amber,
     RequestType.shelter => Icons.home,
+    RequestType.other => Icons.help_outline,
   };
 }
 
 Color statusColor(RequestStatus s) {
   return switch (s) {
-    RequestStatus.pending => const Color(0xFF455A64),
+    RequestStatus.open => const Color(0xFF455A64),
+    RequestStatus.assigned => const Color(0xFF7C3AED),
     RequestStatus.inProgress => const Color(0xFF1565C0),
     RequestStatus.completed => const Color(0xFF2E7D32),
   };
@@ -165,5 +169,28 @@ Color priorityColor(ReliefRequest r) {
     RequestPriority.high => const Color(0xFFEF6C00), // orange
     RequestPriority.medium => const Color(0xFFF9A825), // yellow
     RequestPriority.low => const Color(0xFF607D8B), // blue grey
+  };
+}
+
+RequestStatus parseRequestStatus(Object? raw) {
+  if (raw is String) {
+    final s = raw.trim().toLowerCase();
+    if (s == 'pending') return RequestStatus.open;
+    if (s == 'open') return RequestStatus.open;
+    if (s == 'assigned') return RequestStatus.assigned;
+    if (s == 'in_progress' || s == 'inprogress' || s == 'in-progress') {
+      return RequestStatus.inProgress;
+    }
+    if (s == 'completed') return RequestStatus.completed;
+  }
+  return RequestStatus.open;
+}
+
+String requestStatusToWire(RequestStatus s) {
+  return switch (s) {
+    RequestStatus.open => 'open',
+    RequestStatus.assigned => 'assigned',
+    RequestStatus.inProgress => 'in_progress',
+    RequestStatus.completed => 'completed',
   };
 }

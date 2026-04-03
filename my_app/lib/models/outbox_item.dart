@@ -11,6 +11,7 @@ class OutboxItem {
     required this.requestId,
     required this.payload,
     required this.createdAt,
+    this.baseUpdatedAt,
     this.retryCount = 0,
     this.lastError,
     this.nextRetryAt,
@@ -21,6 +22,7 @@ class OutboxItem {
   final String requestId;
   final Map<String, Object?> payload;
   final DateTime createdAt;
+  final DateTime? baseUpdatedAt;
   final int retryCount;
   final String? lastError;
   final DateTime? nextRetryAt;
@@ -32,6 +34,7 @@ class OutboxItem {
       'requestId': requestId,
       'payload': payload,
       'createdAt': createdAt.toIso8601String(),
+      'baseUpdatedAt': baseUpdatedAt?.toIso8601String(),
       'retryCount': retryCount,
       'lastError': lastError,
       'nextRetryAt': nextRetryAt?.toIso8601String(),
@@ -45,6 +48,7 @@ class OutboxItem {
       requestId: (json['requestId'] as String?) ?? 'unknown',
       payload: Map<String, Object?>.from((json['payload'] as Map?) ?? const {}),
       createdAt: DateTime.tryParse((json['createdAt'] as String?) ?? '') ?? DateTime.now(),
+      baseUpdatedAt: DateTime.tryParse((json['baseUpdatedAt'] as String?) ?? ''),
       retryCount: (json['retryCount'] as int?) ?? 0,
       lastError: json['lastError'] as String?,
       nextRetryAt: DateTime.tryParse((json['nextRetryAt'] as String?) ?? ''),
@@ -60,4 +64,3 @@ T _parseEnum<T extends Enum>(List<T> values, Object? raw, T fallback) {
   }
   return fallback;
 }
-
