@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:hive/hive.dart';
+
 import '../models/outbox_item.dart';
 import '../storage/local_store.dart';
 
