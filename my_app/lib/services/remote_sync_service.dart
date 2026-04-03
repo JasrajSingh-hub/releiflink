@@ -116,20 +116,29 @@ class RemoteSyncService {
     final status = raw is String ? raw : '';
 
     // Backend task flow is:
-    // pending -> accept() -> assigned -> in_progress -> completed
+    // open -> accept() -> assigned -> in_progress -> completed
     //
-    // Our offline UI currently jumps pending -> inProgress directly.
+    // Our offline UI jumps open -> in_progress directly.
     // To keep sync reliable and prevent double assignment, we:
-    // 1) Attempt accept (ignore 409 Already assigned)
-    // 2) Then patch status (in_progress / completed)
+    // 1) Attempt accept
+    // 2) If accept conflicts (409/403), stop and surface a conflict
+    // 3) Then patch status (in_progress / completed)
 
     final acceptUri = _uri('/requests/${Uri.encodeComponent(item.requestId)}/accept');
     try {
       final acceptReq = await client.openUrl('POST', acceptUri).timeout(_requestTimeout);
       final acceptRes = await acceptReq.close().timeout(_requestTimeout);
       final ok = acceptRes.statusCode >= 200 && acceptRes.statusCode < 300;
-      if (!ok && acceptRes.statusCode != 409) {
+      if (!ok) {
         final body = await utf8.decoder.bind(acceptRes).join().timeout(_requestTimeout);
+        if (acceptRes.statusCode == 409 || acceptRes.statusCode == 403) {
+          throw SyncConflictException(
+            requestId: item.requestId,
+            statusCode: acceptRes.statusCode,
+            body: body,
+            uri: acceptUri,
+          );
+        }
         throw HttpException('Accept failed (${acceptRes.statusCode}): $body', uri: acceptUri);
       }
     } on HttpException {
