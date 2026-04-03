@@ -4,6 +4,25 @@ function parseCreatedAt(createdAt) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function parseLatLngFromLocationText(locationText) {
+  if (!locationText) return null;
+  const s = String(locationText);
+  const m = s.match(/Lat:\s*([-0-9.]+)\s*,\s*Lng:\s*([-0-9.]+)/i);
+  if (!m) return null;
+  const lat = Number(m[1]);
+  const lng = Number(m[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+function normalizeStatus(input) {
+  const raw = String(input ?? "pending").trim();
+  const s = raw.toLowerCase();
+  if (s === "inprogress" || s === "in_progress" || s === "in-progress") return "in_progress";
+  if (s === "pending" || s === "assigned" || s === "completed") return s;
+  return "pending";
+}
+
 export function calculatePriority(request, { now = new Date() } = {}) {
   const type = String(request.type ?? "other").toLowerCase();
   const peopleAffected = Number(request.peopleAffected ?? request.peopleCount ?? 0);
@@ -32,16 +51,34 @@ export function normalizeRequestInput(input, { id, createdAt, updatedAt } = {}) 
     input?.peopleAffected ?? input?.peopleCount ?? input?.people_count ?? 0
   );
 
-  const isLifeThreatening = Boolean(input?.isLifeThreatening ?? input?.is_life_threatening);
-  const locationRisk = String(
-    input?.locationRisk ?? input?.location_risk ?? "low"
-  ).toLowerCase();
+  const isLifeThreatening = Boolean(
+    input?.isLifeThreatening ?? input?.is_life_threatening
+  );
+  const locationRisk = String(input?.locationRisk ?? input?.location_risk ?? "low").toLowerCase();
+
+  const title = String(input?.title ?? "").trim();
+  const description = String(input?.description ?? "").trim();
+  const locationText = String(input?.locationText ?? input?.location_text ?? "").trim();
+
+  const explicitLat = Number(input?.lat);
+  const explicitLng = Number(input?.lng);
+  const parsed = parseLatLngFromLocationText(locationText);
+  const lat = Number.isFinite(explicitLat) ? explicitLat : (parsed?.lat ?? null);
+  const lng = Number.isFinite(explicitLng) ? explicitLng : (parsed?.lng ?? null);
+
+  const status = normalizeStatus(input?.status);
+  const assignedTo = input?.assignedTo ?? input?.assigned_to ?? null;
 
   const normalized = {
     id: id ?? input?.id,
     type: type === "medical" || type === "food" || type === "shelter" || type === "other"
       ? type
       : "other",
+    title,
+    description,
+    locationText,
+    lat,
+    lng,
     peopleAffected: Number.isFinite(peopleAffected) ? peopleAffected : 0,
     isLifeThreatening,
     locationRisk: locationRisk === "low" || locationRisk === "medium" || locationRisk === "high"
@@ -49,8 +86,9 @@ export function normalizeRequestInput(input, { id, createdAt, updatedAt } = {}) 
       : "low",
     createdAt: createdAt ?? input?.createdAt ?? input?.created_at,
     updatedAt: updatedAt ?? input?.updatedAt ?? input?.updated_at,
+    status,
+    assignedTo,
   };
 
   return normalized;
 }
-

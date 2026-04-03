@@ -86,3 +86,28 @@ PowerShell (current terminal only):
 - `$env:AUTH_DISABLED="1"`
 
 Then restart the backend. `GET /api/health` will show `authDisabled: true`.
+
+### Volunteer matching (task handling)
+
+Volunteer-only endpoints (requires `Authorization: Bearer <token>` unless `AUTH_DISABLED=1`):
+
+- `GET /api/requests/nearby?lat=12.9716&lng=77.5946&radius=5`
+  - Optional: `priority=Critical|High|Medium|Low`, `type=medical|food|shelter|other`
+  - Returns pending requests within radius, sorted by priority then distance
+- `POST /api/requests/:id/accept`
+  - Atomic claim: only works if the request is still `pending`
+  - If already claimed, returns `409 { error: "Already assigned" }`
+- `GET /api/requests/my-tasks`
+  - Lists requests assigned to the logged-in volunteer
+- `PATCH /api/requests/:requestId/status`
+  - Body: `{ "status": "in_progress" }` or `{ "status": "completed" }`
+  - Only the assigned volunteer can update status
+  - Allowed transitions: `assigned -> in_progress -> completed`
+
+Dev mode helpers:
+
+- With `AUTH_DISABLED=1`, volunteer endpoints use a dev identity.
+  - Default: `id=dev-volunteer`, `role=volunteer`
+  - Override with headers:
+    - `X-Dev-User-Id: v1`
+    - `X-Dev-Role: volunteer`
