@@ -125,6 +125,7 @@ class SyncService extends ChangeNotifier {
       }
 
       final conflicts = <_SyncConflictDraft>[];
+      final conflictIds = <String>{};
       var sent = 0;
       for (final item in pending) {
         final retryAt = item.nextRetryAt;
@@ -145,7 +146,9 @@ class SyncService extends ChangeNotifier {
               message: 'Server rejected this change (${e.statusCode}).',
             ),
           );
+          conflictIds.add(item.requestId);
           await OutboxService.instance.remove(item.id);
+          await OutboxService.instance.removeByRequestId(item.requestId);
         } catch (e) {
           await OutboxService.instance.markFailed(item.id, e);
           if (e is SocketException || e is TimeoutException) {
@@ -158,7 +161,7 @@ class SyncService extends ChangeNotifier {
       }
 
       final remote = await RemoteSyncService.instance.fetchAllRequests();
-      await RequestService.instance.applyRemoteRequests(remote);
+      await RequestService.instance.applyRemoteRequests(remote, forceIds: conflictIds);
 
       if (conflicts.isNotEmpty) {
         for (final c in conflicts) {

@@ -109,12 +109,22 @@ class RequestService extends ChangeNotifier {
     return updated;
   }
 
-  Future<void> applyRemoteRequests(List<Map<String, Object?>> remote) async {
+  Future<void> applyRemoteRequests(
+    List<Map<String, Object?>> remote, {
+    Set<String>? forceIds,
+  }) async {
     var changed = false;
+    final force = forceIds ?? const <String>{};
     for (final json in remote) {
       final incoming = ReliefRequest.fromJson(json);
       final existing = getById(incoming.id);
       if (existing == null) {
+        await _requestsBox.put(incoming.id, incoming.toJson());
+        changed = true;
+        continue;
+      }
+
+      if (force.contains(incoming.id)) {
         await _requestsBox.put(incoming.id, incoming.toJson());
         changed = true;
         continue;
